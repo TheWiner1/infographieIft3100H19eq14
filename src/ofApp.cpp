@@ -1,9 +1,9 @@
-#include "ofApp.h"
+﻿#include "ofApp.h"
 
 //--------------------------------------------------------------
 void ofApp::setup() {
 
-	ofSetWindowTitle("IFT-3100, Equipe 20");
+	ofSetWindowTitle("modèle d'illumination : " + renderer.shader_name + " (1-5 ↑↓←→ r)");
 
 	// Parametres de couleurs.
 	int r = 255;
@@ -140,6 +140,8 @@ void ofApp::setup() {
 	nFrames = 0;
 	renderer.setup();
 	draggableVertex.setup();
+	renderer.setupIllumination();
+	renderer.setupCamera();
 }
 
 //--------------------------------------------------------------
@@ -155,7 +157,7 @@ void ofApp::update() {
 	}
 	//HSB
 	else {
-		renderer.background_color = color_picker_background_hsb;
+		renderer.background_color = color_picker_background_hsb;//couleur de la 3D
 		renderer.stroke_fill = color_picker_fill_hsb;
 		renderer.stroke_color = color_picker_stroke_hsb;
 	}
@@ -168,6 +170,9 @@ void ofApp::update() {
 
 	renderer.model_box = model_box;
 	renderer.update();
+	renderer.updateCamera();
+
+	renderer.updateIllumination();
 }
 
 //--------------------------------------------------------------
@@ -203,7 +208,48 @@ void ofApp::keyPressed(int key) {
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key) {
+	switch (key)
+	{
+		case 111: // touche o
+			renderer.is_camera_perspective = false;
+			renderer.projection();
+			ofLog() << "<orthographic projection>";
+			break;
 
+		case 112: // touche p
+			renderer.is_camera_perspective = true;
+			renderer.projection();
+			ofLog() << "<perpective projection>";
+			break;
+
+		case 49: // touche 1
+			renderer.shader_active = ShaderType::color_fill;
+			ofLog() << "<shader: color fill>";
+			break;
+
+		case 50: // touche 2
+			renderer.shader_active = ShaderType::lambert;
+			ofLog() << "<shader: lambert>";
+			break;
+
+		case 51: // touche 3
+			renderer.shader_active = ShaderType::gouraud;
+			ofLog() << "<shader: gouraud>";
+			break;
+
+		case 52: // touche 4
+			renderer.shader_active = ShaderType::phong;
+			ofLog() << "<shader: phong>";
+			break;
+
+		case 53: // touche 5
+			renderer.shader_active = ShaderType::blinn_phong;
+			ofLog() << "<shader: blinn-phong>";
+			break;
+
+		default:
+			break;
+	}
 }
 
 //--------------------------------------------------------------
