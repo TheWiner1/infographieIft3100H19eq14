@@ -1,9 +1,9 @@
-#include "ofApp.h"
+﻿#include "ofApp.h"
 
 //--------------------------------------------------------------
 void ofApp::setup() {
 
-	ofSetWindowTitle("IFT-3100, Equipe 20");
+	ofSetWindowTitle("modèle d'illumination : " + renderer.shader_name + " (1-5 ↑↓←→ r)");
 
 	// Parametres de couleurs.
 	int r = 255;
@@ -146,9 +146,20 @@ void ofApp::setup() {
 	nFrames = 0;
 	renderer.setup();
 	draggableVertex.setup();
+	renderer.setupIllumination();
+	//renderer.setupCamera();
 
-	camera.setPosition(ofGetWidth() / 2.0f, ofGetHeight() / 2.0f, 700.0f);//main diff�rennt du tp1
-	
+	ofEnableDepthTest();
+
+	camera_near = 50.0f;
+	camera_far = 1550.0f;
+
+	camera_fov = 60.0f;
+	camera_fov_delta = 16.0f;
+
+	camera_front.setPosition(ofGetWidth() / 2.0f, ofGetHeight() / 2.0f, 300.0f);
+
+	projection();
 }
 
 //--------------------------------------------------------------
@@ -164,7 +175,7 @@ void ofApp::update() {
 	}
 	//HSB
 	else {
-		renderer.background_color = color_picker_background_hsb;
+		renderer.background_color = color_picker_background_hsb;//couleur de la 3D
 		renderer.stroke_fill = color_picker_fill_hsb;
 		renderer.stroke_color = color_picker_stroke_hsb;
 	}
@@ -177,31 +188,47 @@ void ofApp::update() {
 
 	renderer.model_box = model_box;
 	renderer.update();
+	//renderer.updateCamera();
+	time_current = ofGetElapsedTimef();
+	time_elapsed = time_current - time_last;
+	if (is_camera_perspective)
+	{
+		if (is_camera_fov_narrow)
+		{
+			camera_fov = std::max(camera_fov -= camera_fov_delta * time_elapsed, 0.0f);
+			camera->setFov(camera_fov);
+		}
+
+		if (is_camera_fov_wide)
+		{
+			camera_fov = std::min(camera_fov += camera_fov_delta * time_elapsed, 180.0f);
+			camera->setFov(camera_fov);
+		}
+	}
+	renderer.updateIllumination();
 }
-int jires = 1;
+
 //--------------------------------------------------------------
 void ofApp::draw() {
-	camera.begin();
-	camera.setScale(1, -1, 1);
+	camera->begin();
+	camera->setScale(1, -1, 1);
 
 	renderer.draw();
 	if (draggable_show)
 		draggableVertex.draw();
+	if (delaunay_show) {
+		triangulation.draw();
+		ofDrawBitmapString("'r' to reset", ofPoint(10, 20));
+	}
 	
-
 	// Logique de capture d'ecran.
 	if (nFrames < recFrames && nFrames % 3 == 0) {
 		captureFrame();
 	}
-	if (delaunay_show) {
-		triangulation.draw();
-		jires = 0;
-		ofDrawBitmapString("'r' to reset", ofPoint(10, 20));
-	}
 	if (nFrames == recFrames) {
 		recFrames = 0;
 	}
-	camera.end();
+	camera->end();
 	gui.draw();
 }
 
@@ -226,7 +253,48 @@ void ofApp::keyPressed(int key) {
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key) {
+	switch (key)
+	{
+		case 111: // touche o
+			is_camera_perspective = false;
+			projection();
+			ofLog() << "<orthographic projection>";
+			break;
 
+		case 112: // touche p
+			is_camera_perspective = true;
+			projection();
+			ofLog() << "<perpective projection>";
+			break;
+
+		case 49: // touche 1
+			renderer.shader_active = ShaderType::color_fill;
+			ofLog() << "<shader: color fill>";
+			break;
+
+		case 50: // touche 2
+			renderer.shader_active = ShaderType::lambert;
+			ofLog() << "<shader: lambert>";
+			break;
+
+		case 51: // touche 3
+			renderer.shader_active = ShaderType::gouraud;
+			ofLog() << "<shader: gouraud>";
+			break;
+
+		case 52: // touche 4
+			renderer.shader_active = ShaderType::phong;
+			ofLog() << "<shader: phong>";
+			break;
+
+		case 53: // touche 5
+			renderer.shader_active = ShaderType::blinn_phong;
+			ofLog() << "<shader: blinn-phong>";
+			break;
+
+		default:
+			break;
+	}
 }
 
 //--------------------------------------------------------------
@@ -280,10 +348,8 @@ void ofApp::mouseReleased(int x, int y, int button) {
 	draggableVertex.mouseReleased(x, y, button);
 
 	//pour la gestion de la triangularisation
-	if (jires == 0) {
-		triangulation.addPoint(ofPoint(x, y));
-		triangulation.triangulate();
-	}
+	triangulation.addPoint(ofPoint(x, y));
+	triangulation.triangulate();
 }
 
 //--------------------------------------------------------------
@@ -484,6 +550,28 @@ void ofApp::model_reset_pressed()
 void ofApp::undo_pressed()
 {
 	renderer.undo();
+}
+
+void ofApp::projection() {
+	camera = &camera_front;
+	camera_position = camera->getPosition();
+	camera_orientation = camera->getOrientationQuat();
+
+	// mode de projection de la caméra
+	if (is_camera_perspective)
+	{
+		camera->disableOrtho();
+		camera->setupPerspective(false, camera_fov, camera_near, camera_far, ofVec2f(0, 0));
+		camera_projection = "perspective";
+	}
+	else
+	{
+		camera->enableOrtho();
+		camera_projection = "orthogonale";
+	}
+
+	camera->setPosition(camera_position);
+	camera->setOrientation(camera_orientation);
 }
 
 void ofApp::redo_pressed()

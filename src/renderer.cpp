@@ -1,5 +1,19 @@
 #include "renderer.h"
 
+/*void Renderer::setupCamera() {
+	ofEnableDepthTest();
+	
+	camera_near = 50.0f;
+	camera_far = 1550.0f;
+
+	camera_fov = 60.0f;
+	camera_fov_delta = 16.0f;
+
+	camera_front.setPosition(ofGetWidth() / 2.0f, ofGetHeight() / 2.0f, 300.0f);
+
+	projection();
+}*/
+
 void Renderer::setup()
 {
 	ofSetFrameRate(60);
@@ -89,17 +103,47 @@ void Renderer::setup()
 	}
 
 	// 4.3 Modeles 3D setup.
-	ofEnableLighting();
+	/*ofEnableLighting();
 
 	light.setDiffuseColor(ofColor(255, 255, 255));
 	light.setPosition(0.0f, 0.0f, 1000.0f);
-	light.enable();
-
+	light.enable();^^^^^^^%&^^6??????????????
+	*/
 	model_count = 3;
+	
+	/*model_one.loadModel("Car.obj");
+	model_two.loadModel("Wolf.obj");
+	model_three.loadModel("Deer.obj");//jires .disableMaterials();
+
+	models[0] = &model_one;
+	models[1] = &model_two;
+	models[2] = &model_three;
+
+	//Invisible tant qu'on les appelles pas.
+	models[0]->setScale(0.0f, 0.0f, 0.0f);
+	models[1]->setScale(0.0f, 0.0f, 0.0f);
+	models[2]->setScale(0.0f, 0.0f, 0.0f);*/
+
+	// Filtrage
+	filtrage = Filtrage::none;
+}
+
+void Renderer::setupIllumination() {
+	//ofEnableDepthTest();
+	ofSetLogLevel(OF_LOG_VERBOSE);
+
+	// paramètres
+	oscillation_amplitude = 42.0f;//32
+	oscillation_frequency = 7500.0f;
 
 	model_one.loadModel("Car.obj");
 	model_two.loadModel("Wolf.obj");
 	model_three.loadModel("Deer.obj");
+
+	// désactiver le matériau par défaut du modèle
+	model_one.disableMaterials();
+	model_two.disableMaterials();
+	model_three.disableMaterials();//jires modif djr
 
 	models[0] = &model_one;
 	models[1] = &model_two;
@@ -110,8 +154,29 @@ void Renderer::setup()
 	models[1]->setScale(0.0f, 0.0f, 0.0f);
 	models[2]->setScale(0.0f, 0.0f, 0.0f);
 
-	// Filtrage
-	filtrage = Filtrage::none;
+	// charger, compiler et linker les sources des shaders
+	shader_color_fill.load(
+		"shader/color_fill_330_vs.glsl",
+		"shader/color_fill_330_fs.glsl");
+
+	shader_lambert.load(
+		"shader/lambert_330_vs.glsl",
+		"shader/lambert_330_fs.glsl");
+
+	shader_gouraud.load(
+		"shader/gouraud_330_vs.glsl",
+		"shader/gouraud_330_fs.glsl");
+
+	shader_phong.load(
+		"shader/phong_330_vs.glsl",
+		"shader/phong_330_fs.glsl");
+
+	shader_blinn_phong.load(
+		"shader/blinn_phong_330_vs.glsl",
+		"shader/blinn_phong_330_fs.glsl");
+
+	// shader actif au lancement de la scène
+	shader_active = ShaderType::blinn_phong;
 }
 
 void Renderer::update()
@@ -126,8 +191,103 @@ void Renderer::update()
 	}
 }
 
+void Renderer::updateIllumination()
+{
+	// transformer la lumière
+	light.setGlobalPosition(
+		ofMap(ofGetMouseX() / (float)ofGetWidth(), 0.0f, 1.0f, -ofGetWidth() / 2.0f, ofGetWidth() / 2.0f),
+		ofMap(ofGetMouseY() / (float)ofGetHeight(), 0.0f, 1.0f, -ofGetHeight() / 2.0f, ofGetHeight() / 2.0f),
+		-100.0f * 1.5f);//100 = offset_z
+
+	// mise à jour d'une valeur numérique animée par un oscillateur
+	float oscillation = oscillate(ofGetElapsedTimeMillis(), oscillation_frequency, oscillation_amplitude) + oscillation_amplitude;
+
+	// passer les attributs uniformes au shader de sommets
+	switch (shader_active)
+	{
+	case ShaderType::color_fill:
+		shader_name = "Color Fill";
+		shader = &shader_color_fill;
+		shader->begin();
+		shader->setUniform3f("color", 1.0f, 1.0f, 0.0f);
+		shader->end();
+		break;
+
+	case ShaderType::lambert:
+		shader_name = "Lambert";
+		shader = &shader_lambert;
+		shader->begin();
+		shader->setUniform3f("color_ambient", 0.1f, 0.1f, 0.1f);
+		shader->setUniform3f("color_diffuse", 0.6f, 0.6f, 0.6f);
+		shader->setUniform3f("light_position", glm::vec4(light.getGlobalPosition(), 0.0f) * ofGetCurrentMatrix(OF_MATRIX_MODELVIEW));
+		shader->end();
+		break;
+
+	case ShaderType::gouraud:
+		shader_name = "Gouraud";
+		shader = &shader_gouraud;
+		shader->begin();
+		shader->setUniform3f("color_ambient", 0.1f, 0.1f, 0.1f);
+		shader->setUniform3f("color_diffuse", 0.6f, 0.6f, 0.0f);
+		shader->setUniform3f("color_specular", 1.0f, 1.0f, 0.0f);
+		shader->setUniform1f("brightness", oscillation);
+		shader->setUniform3f("light_position", glm::vec4(light.getGlobalPosition(), 0.0f) * ofGetCurrentMatrix(OF_MATRIX_MODELVIEW));
+		shader->end();
+		break;
+
+	case ShaderType::phong:
+		shader_name = "Phong";
+		shader = &shader_phong;
+		shader->begin();
+		shader->setUniform3f("color_ambient", 0.1f, 0.1f, 0.1f);
+		shader->setUniform3f("color_diffuse", 0.6f, 0.0f, 0.6f);
+		shader->setUniform3f("color_specular", 1.0f, 1.0f, 0.0f);
+		shader->setUniform1f("brightness", oscillation);
+		shader->setUniform3f("light_position", glm::vec4(light.getGlobalPosition(), 0.0f) * ofGetCurrentMatrix(OF_MATRIX_MODELVIEW));
+		shader->end();
+		break;
+
+	case ShaderType::blinn_phong:
+		shader_name = "Blinn-Phong";
+		shader = &shader_blinn_phong;
+		shader->begin();
+		shader->setUniform3f("color_ambient", 0.1f, 0.1f, 0.1f);
+		shader->setUniform3f("color_diffuse", 0.0f, 0.6f, 0.6f);
+		shader->setUniform3f("color_specular", 1.0f, 1.0f, 0.0f);
+		shader->setUniform1f("brightness", oscillation);
+		shader->setUniform3f("light_position", glm::vec4(light.getGlobalPosition(), 0.0f) * ofGetCurrentMatrix(OF_MATRIX_MODELVIEW));
+		shader->end();
+		break;
+
+	default:
+		break;
+	}
+}
+
+/*void Renderer::updateCamera() {
+	time_current = ofGetElapsedTimef();
+	time_elapsed = time_current - time_last;
+	if (is_camera_perspective)
+	{
+		if (is_camera_fov_narrow)
+		{
+			camera_fov = std::max(camera_fov -= camera_fov_delta * time_elapsed, 0.0f);
+			camera->setFov(camera_fov);
+		}
+
+		if (is_camera_fov_wide)
+		{
+			camera_fov = std::min(camera_fov += camera_fov_delta * time_elapsed, 180.0f);
+			camera->setFov(camera_fov);
+		}
+	}
+}*/
+
 void Renderer::draw()
 {
+	// activer la caméra
+	//camera->begin();
+
 	ofSetBackgroundColor(background_color);
 
 	// Dessin d'une image importee.
@@ -343,13 +503,22 @@ void Renderer::draw()
 			mouse_current_x,
 			mouse_current_y);
 	}
+//===============================================ilumunation ============================================
+	// activer l'éclairage dynamique
+	ofEnableLighting();
+
+	// activer la lumière dynamique
+	light.enable();
 
 	// Dessine les modeles 3D.
 	ofPushMatrix();
 	for (int index = 0; index < model_count; ++index) {
 		ofEnableDepthTest();
-		models[index]->draw(OF_MESH_FILL);
-		ofDisableDepthTest();
+		
+		// activer le shader
+		shader->begin();
+
+		models[index]->draw(OF_MESH_FILL);//djr modiif
 
 		if (model_box) {
 			ofPushMatrix();
@@ -365,8 +534,24 @@ void Renderer::draw()
 	}
 	ofPopMatrix();
 
+	// désactiver le shader
+	shader->end();
+
+	// désactiver la lumière
+	light.disable();
+
+	// désactiver l'éclairage
+	ofDisableDepthTest();
+//=============================================fin illumination====================================================
 	// Dessine les curseurs dynamiques.
 	draw_cursor(mouse_current_x, mouse_current_y);
+
+	ofPopMatrix();
+
+	// désactiver le shader
+	shader->end();
+
+	//camera->end();
 }
 
 // Fonction qui defini le remplissage de la figure.
@@ -376,6 +561,12 @@ void Renderer::remplissage()
 		ofFill();
 	else
 		ofNoFill();
+}
+
+// fonction d'oscillation
+float Renderer::oscillate(float time, float frequency, float amplitude)
+{
+	return sinf(time * 3.0f * PI / frequency) * amplitude;//2
 }
 
 // Fonction qui dessine le curseur dynamique.
@@ -574,6 +765,7 @@ void Renderer::toneMap() {
 
 // Fonction qui ajoute un modele 3D.
 void Renderer::add_3d_model(ModelToDraw model) {
+
 	vector_position.x = mouse_current_x;
 	vector_position.y = mouse_current_y;
 	vector_position.z = 0.0f;
@@ -600,6 +792,7 @@ void Renderer::add_3d_model(ModelToDraw model) {
 	default:
 		break;
 	}
+
 }
 
 // Fonction qui efface les modeles 3D.
@@ -658,6 +851,28 @@ void Renderer::redo()
 		++head;
 	}
 }
+
+/*void Renderer::projection() {
+	camera = &camera_front;
+	camera_position = camera->getPosition();
+	camera_orientation = camera->getOrientationQuat();
+
+	// mode de projection de la caméra
+	if (is_camera_perspective)
+	{
+		camera->disableOrtho();
+		camera->setupPerspective(false, camera_fov, camera_near, camera_far, ofVec2f(0, 0));
+		camera_projection = "perspective";
+	}
+	else
+	{
+		camera->enableOrtho();
+		camera_projection = "orthogonale";
+	}
+
+	camera->setPosition(camera_position);
+	camera->setOrientation(camera_orientation);
+}*/
 
 Renderer::~Renderer()
 {

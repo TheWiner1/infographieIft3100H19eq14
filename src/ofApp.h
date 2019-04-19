@@ -13,13 +13,42 @@ public:
 		Renderer renderer;
 		DraggableVertex draggableVertex;
 
-		ofCamera camera;
-
 		ofxDelaunay triangulation;//triangularisation
 
 		void setup();
 		void update();
 		void draw();
+
+	//variables camera;
+	ofCamera* camera;
+
+	ofCamera camera_front;
+
+	bool is_camera_perspective;
+
+	ofQuaternion camera_orientation;
+
+	ofVec3f camera_position;
+	ofVec3f camera_target;
+
+	string camera_name;
+	string camera_projection;
+
+	float camera_near;
+	float camera_far;
+
+	float camera_fov;
+	float camera_fov_delta;
+
+	bool is_camera_fov_narrow;
+	bool is_camera_fov_wide;
+
+	float time_current;
+	float time_last;
+	float time_elapsed;
+	// fin variables  camera
+
+	void projection();
 
 		void keyPressed(int key);
 		void keyReleased(int key);
@@ -41,10 +70,10 @@ public:
 		ofxButton model_reset;
 		ofParameter<bool> model_box;
 		ofxGuiGroup trans_interactive;
-		ofParameter<bool> draggable_show, delaunay_show;
+		ofParameter<bool> draggable_show,delaunay_show;
 		ofxGuiGroup tex_procedural;
 		ofParameter<bool> affiche_tex;
-		ofxGuiGroup geometrie, topologie;
+		ofxGuiGroup geometrie,topologie;
 		ofParameter<bool> affiche_pyramide;
 		ofParameter<bool> affiche_sphere;
 		ofEventListener pyramide_listener;
