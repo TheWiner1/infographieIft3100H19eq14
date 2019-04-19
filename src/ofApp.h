@@ -5,12 +5,17 @@
 #include "ofxOscParameterSync.h"
 #include "renderer.h"
 #include "draggableVertex.h"
+#include "ofxDelaunay.h"
 
 class ofApp : public ofBaseApp {
 
 public:
 		Renderer renderer;
 		DraggableVertex draggableVertex;
+
+		ofCamera camera;
+
+		ofxDelaunay triangulation;//triangularisation
 
 		void setup();
 		void update();
@@ -36,10 +41,10 @@ public:
 		ofxButton model_reset;
 		ofParameter<bool> model_box;
 		ofxGuiGroup trans_interactive;
-		ofParameter<bool> draggable_show;
+		ofParameter<bool> draggable_show, delaunay_show;
 		ofxGuiGroup tex_procedural;
 		ofParameter<bool> affiche_tex;
-		ofxGuiGroup geometrie;
+		ofxGuiGroup geometrie, topologie;
 		ofParameter<bool> affiche_pyramide;
 		ofParameter<bool> affiche_sphere;
 		ofEventListener pyramide_listener;

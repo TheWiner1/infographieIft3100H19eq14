@@ -1,9 +1,9 @@
-﻿#include "ofApp.h"
+#include "ofApp.h"
 
 //--------------------------------------------------------------
 void ofApp::setup() {
 
-	ofSetWindowTitle("modèle d'illumination : " + renderer.shader_name + " (1-5 ↑↓←→ r)");
+	ofSetWindowTitle("IFT-3100, Equipe 20");
 
 	// Parametres de couleurs.
 	int r = 255;
@@ -132,6 +132,12 @@ void ofApp::setup() {
 	gui.add(textboxX);
 	gui.add(textboxY);
 
+	//triangulation de Delaunay
+	topologie.setup("triangulation de Delaunay");
+	delaunay_show.set("triangulation", false);
+	topologie.add(delaunay_show);
+	gui.add(&topologie);
+
 	// Initialisation variable.
 	checkbox1 = true;
 	rect = pixel = elipse = point = ligne = triangle = false;
@@ -140,8 +146,9 @@ void ofApp::setup() {
 	nFrames = 0;
 	renderer.setup();
 	draggableVertex.setup();
-	renderer.setupIllumination();
-	renderer.setupCamera();
+
+	camera.setPosition(ofGetWidth() / 2.0f, ofGetHeight() / 2.0f, 700.0f);//main diff�rennt du tp1
+	
 }
 
 //--------------------------------------------------------------
@@ -157,7 +164,7 @@ void ofApp::update() {
 	}
 	//HSB
 	else {
-		renderer.background_color = color_picker_background_hsb;//couleur de la 3D
+		renderer.background_color = color_picker_background_hsb;
 		renderer.stroke_fill = color_picker_fill_hsb;
 		renderer.stroke_color = color_picker_stroke_hsb;
 	}
@@ -170,25 +177,32 @@ void ofApp::update() {
 
 	renderer.model_box = model_box;
 	renderer.update();
-	renderer.updateCamera();
-
-	renderer.updateIllumination();
 }
-
+int jires = 1;
 //--------------------------------------------------------------
 void ofApp::draw() {
+	camera.begin();
+	camera.setScale(1, -1, 1);
+
 	renderer.draw();
 	if (draggable_show)
 		draggableVertex.draw();
-	gui.draw();
+	
 
 	// Logique de capture d'ecran.
 	if (nFrames < recFrames && nFrames % 3 == 0) {
 		captureFrame();
 	}
+	if (delaunay_show) {
+		triangulation.draw();
+		jires = 0;
+		ofDrawBitmapString("'r' to reset", ofPoint(10, 20));
+	}
 	if (nFrames == recFrames) {
 		recFrames = 0;
 	}
+	camera.end();
+	gui.draw();
 }
 
 //--------------------------------------------------------------
@@ -204,52 +218,15 @@ void ofApp::keyPressed(int key) {
 	if (key == 'x') {
 		recFrames = nFrames + 120;  // 2 sec @ 60 FrameRate
 	}
+
+	if (key == 'r') {
+		triangulation.reset();
+	}
 }
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key) {
-	switch (key)
-	{
-		case 111: // touche o
-			renderer.is_camera_perspective = false;
-			renderer.projection();
-			ofLog() << "<orthographic projection>";
-			break;
 
-		case 112: // touche p
-			renderer.is_camera_perspective = true;
-			renderer.projection();
-			ofLog() << "<perpective projection>";
-			break;
-
-		case 49: // touche 1
-			renderer.shader_active = ShaderType::color_fill;
-			ofLog() << "<shader: color fill>";
-			break;
-
-		case 50: // touche 2
-			renderer.shader_active = ShaderType::lambert;
-			ofLog() << "<shader: lambert>";
-			break;
-
-		case 51: // touche 3
-			renderer.shader_active = ShaderType::gouraud;
-			ofLog() << "<shader: gouraud>";
-			break;
-
-		case 52: // touche 4
-			renderer.shader_active = ShaderType::phong;
-			ofLog() << "<shader: phong>";
-			break;
-
-		case 53: // touche 5
-			renderer.shader_active = ShaderType::blinn_phong;
-			ofLog() << "<shader: blinn-phong>";
-			break;
-
-		default:
-			break;
-	}
 }
 
 //--------------------------------------------------------------
@@ -301,6 +278,12 @@ void ofApp::mouseReleased(int x, int y, int button) {
 	if (model_one.get() || model_two.get() || model_three.get()) { renderer.add_3d_model(renderer.model_draw_mode); }
 
 	draggableVertex.mouseReleased(x, y, button);
+
+	//pour la gestion de la triangularisation
+	if (jires == 0) {
+		triangulation.addPoint(ofPoint(x, y));
+		triangulation.triangulate();
+	}
 }
 
 //--------------------------------------------------------------
