@@ -10,31 +10,16 @@ public:
   ofVec3f* selected_ctrl_point;
 
 	ofVec3f ctrl_points[6];
-
-  ofVec3f initial_position1;
-  ofVec3f initial_position2;
-  ofVec3f initial_position3;
-  ofVec3f initial_position4;
-  ofVec3f initial_position5;
-	ofVec3f initial_position6;
-
   ofVec3f position;
 
   float line_width_outline;
   float line_width_curve;
-
   float radius;
-
-  float delta_x;
-  float delta_y;
-
-  float motion_speed;
+  float speed;
 
   int framebuffer_width;
   int framebuffer_height;
-
   int line_resolution;
-
   int index;
 
 	bool afficher_courbe_parametrique, afficher_surface_parametrique;

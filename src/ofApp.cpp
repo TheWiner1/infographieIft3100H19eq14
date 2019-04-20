@@ -160,13 +160,13 @@ void ofApp::update() {
 
 	if (topologieParametrique.afficher_courbe_parametrique) {
 		if (is_key_press_up)
-			topologieParametrique.selected_ctrl_point->y -= topologieParametrique.delta_y * time_elapsed;
+			topologieParametrique.selected_ctrl_point->y -= topologieParametrique.speed * time_elapsed;
 		if (is_key_press_down)
-			topologieParametrique.selected_ctrl_point->y += topologieParametrique.delta_y * time_elapsed;
+			topologieParametrique.selected_ctrl_point->y += topologieParametrique.speed * time_elapsed;
 		if (is_key_press_left)
-			topologieParametrique.selected_ctrl_point->x -= topologieParametrique.delta_x * time_elapsed;
+			topologieParametrique.selected_ctrl_point->x -= topologieParametrique.speed * time_elapsed;
 		if (is_key_press_right)
-			topologieParametrique.selected_ctrl_point->x += topologieParametrique.delta_x * time_elapsed;
+			topologieParametrique.selected_ctrl_point->x += topologieParametrique.speed * time_elapsed;
 	}
 
 	//RGB
@@ -257,6 +257,10 @@ void ofApp::keyReleased(int key) {
 		if (selected_ctrl_point == 6)
 			selected_ctrl_point = 0;
 		topologieParametrique.selected_ctrl_point = &topologieParametrique.ctrl_points[selected_ctrl_point];
+		break;
+
+	case 98: // touche b : reinitialise la position des points de la courbe parametrique.
+		topologieParametrique.reset();
 		break;
 
 	case 109: // touche m

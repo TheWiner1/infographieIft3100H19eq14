@@ -1,6 +1,3 @@
-// IFT3100H19_CurveBezier/renderer.cpp
-// Classe responsable du rendu de l'application.
-
 #include "topoParametrique.h"
 
 void TopoParametrique::setup()
@@ -16,8 +13,7 @@ void TopoParametrique::setup()
   line_width_curve = 4.0f;
 
   radius = 16.0f;
-
-  motion_speed = 250.0f;
+	speed = 250.0f;
 
   for (index = 0; index <= line_resolution; ++index)
     line_renderer.addVertex(ofPoint());
@@ -49,22 +45,12 @@ void TopoParametrique::reset()
   float h_1_3 = framebuffer_height / 3.0f;
   float h_4_5 = framebuffer_height * 4.0f / 5.0f;
 
-  initial_position1 = {w_1_6, h_4_5, 0};
-  initial_position2 = {w_1_4, h_1_3, 0};
-  initial_position3 = {w_1_3, h_1_5, 0};
-  initial_position4 = {w_2_3, h_1_5, 0};
-  initial_position5 = {w_3_4, h_1_3, 0};
-	initial_position6 = {w_5_6, h_4_5, 0};
-
-	ctrl_points[0] = initial_position1;
-	ctrl_points[1] = initial_position2;
-	ctrl_points[2] = initial_position3;
-	ctrl_points[3] = initial_position4;
-	ctrl_points[4] = initial_position5;
-	ctrl_points[5] = initial_position6;
-
-  delta_x = motion_speed;
-  delta_y = motion_speed;
+	ctrl_points[0] = {w_1_6, h_4_5, 0};
+	ctrl_points[1] = {w_1_4, h_1_3, 0};
+	ctrl_points[2] = {w_1_3, h_1_5, 0};
+	ctrl_points[3] = {w_2_3, h_1_5, 0};
+	ctrl_points[4] = {w_3_4, h_1_3, 0};
+	ctrl_points[5] = {w_5_6, h_4_5, 0};
 }
 
 void TopoParametrique::update()
@@ -116,6 +102,7 @@ void TopoParametrique::draw()
 		ofDrawEllipse(ctrl_points[4].x, ctrl_points[4].y, radius, radius);
 		ofDrawEllipse(ctrl_points[5].x, ctrl_points[5].y, radius, radius);
 
+		// dessiner le point a deplacer
 		ofSetColor(0, 200, 0);
 		ofDrawEllipse(selected_ctrl_point->x, selected_ctrl_point->y, radius, radius);
 
@@ -126,7 +113,7 @@ void TopoParametrique::draw()
 		ofPushMatrix();
 		ofFill();
 		ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
-		ofSetColor(150);
+		ofSetColor(100, 100, 200);
 		glEvalMesh2(GL_FILL, 0, 20, 0, 20);
 		ofPopMatrix();
 	}
