@@ -5,8 +5,9 @@
 
 void TopoParametrique::setup()
 {
-  ofSetFrameRate(60);
-  ofSetBackgroundColor(0);
+	// Courbe parametrique
+	afficher_courbe_parametrique = afficher_surface_parametrique = false;
+
   ofSetSphereResolution(32);
   ofDisableDepthTest();
 
@@ -25,7 +26,11 @@ void TopoParametrique::setup()
 
   reset();
 
-	afficher_courbe_parametrique = afficher_surface_parametrique = false;
+	// Surface parametrique
+	glMap2f(GL_MAP2_VERTEX_3, 0, 1, 3, 4, 0, 1, 12, 4, &ctrlpoints[0][0][0]);
+	glEnable(GL_MAP2_VERTEX_3);
+	glEnable(GL_AUTO_NORMAL);
+	glMapGrid2f(20, 0, 1, 20, 0, 1);
 }
 
 void TopoParametrique::reset()
@@ -114,6 +119,15 @@ void TopoParametrique::draw()
 		ofSetColor(0, 200, 0);
 		ofDrawEllipse(selected_ctrl_point->x, selected_ctrl_point->y, radius, radius);
 
+		ofPopMatrix();
+	}
+
+	if (afficher_surface_parametrique) {
+		ofPushMatrix();
+		ofFill();
+		ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+		ofSetColor(150);
+		glEvalMesh2(GL_FILL, 0, 20, 0, 20);
 		ofPopMatrix();
 	}
 }
