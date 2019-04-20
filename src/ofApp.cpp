@@ -1,9 +1,9 @@
-#include "ofApp.h"
+﻿#include "ofApp.h"
 
 //--------------------------------------------------------------
 void ofApp::setup() {
 
-	ofSetWindowTitle("IFT-3100, Equipe 20");
+	ofSetWindowTitle("modèle d'illumination : " + renderer.shader_name + " (1-5 ↑↓←→ r)");
 
 	// Parametres de couleurs.
 	int r = 255;
@@ -95,10 +95,16 @@ void ofApp::setup() {
 	geometry_group.setup("Modeles 3D");
 	geometry_group.add(model_one.set("Voiture", false));
 	model_one_listener = model_one.newListener([this](bool&) {onChangeGeometryGroup(model_one.getName(), model_one.get()); });
+	geometry_group.add(model_one_material.setup("Matériau voiture",2,0,4));
+	model_one_listener = model_one.newListener([this](bool&) {onChangeGeometryGroup(model_one.getName(), model_one.get()); });
+
 	geometry_group.add(model_two.set("Loup", false));
 	model_two_listener = model_two.newListener([this](bool&) {onChangeGeometryGroup(model_two.getName(), model_two.get()); });
+	geometry_group.add(model_two_material.setup("Matériau loup", 0, 0, 4));
+
 	geometry_group.add(model_three.set("Cerf", false));
 	model_three_listener = model_three.newListener([this](bool&) {onChangeGeometryGroup(model_three.getName(), model_three.get()); });
+	geometry_group.add(model_three_material.setup("Matériau cerf", 4, 0, 4));
 
 	gui.add(&geometry_group);
 	model_reset.setup("Effacer modeles");
@@ -140,6 +146,8 @@ void ofApp::setup() {
 	nFrames = 0;
 	renderer.setup();
 	draggableVertex.setup();
+	renderer.setupIllumination();
+	renderer.setupCamera();
 }
 
 //--------------------------------------------------------------
@@ -155,7 +163,7 @@ void ofApp::update() {
 	}
 	//HSB
 	else {
-		renderer.background_color = color_picker_background_hsb;
+		renderer.background_color = color_picker_background_hsb;//couleur de la 3D
 		renderer.stroke_fill = color_picker_fill_hsb;
 		renderer.stroke_color = color_picker_stroke_hsb;
 	}
@@ -168,6 +176,30 @@ void ofApp::update() {
 
 	renderer.model_box = model_box;
 	renderer.update();
+	renderer.updateCamera();
+	update_materials();
+	renderer.updateIllumination();
+
+	/*Alex*/
+
+	renderer.is_camera_move_forward = is_key_press_plus;
+	renderer.is_camera_move_backward = is_key_press_minus;
+
+	renderer.is_camera_move_left = is_key_press_left;
+	renderer.is_camera_move_right = is_key_press_right;
+
+	renderer.is_camera_move_up = is_key_press_up;
+	renderer.is_camera_move_down = is_key_press_down;
+
+	renderer.is_camera_roll_left = is_key_press_eight;
+	renderer.is_camera_roll_right = is_key_press_nine;
+
+
+	renderer.is_camera_pan_left = is_key_press_div;
+	renderer.is_camera_pan_right = is_key_press_mul;
+
+	renderer.is_camera_look_at = is_key_press_seven;
+	/*Alex*/
 }
 
 //--------------------------------------------------------------
@@ -199,11 +231,150 @@ void ofApp::keyPressed(int key) {
 	if (key == 'x') {
 		recFrames = nFrames + 120;  // 2 sec @ 60 FrameRate
 	}
+	/*Alex*/
+	switch (key)
+	{
+	case OF_KEY_LEFT: // touche ←
+		is_key_press_left = true;
+		break;
+
+	case OF_KEY_UP: // touche ↑
+		is_key_press_up = true;
+		break;
+
+	case OF_KEY_RIGHT: // touche →
+		is_key_press_right = true;
+		break;
+
+	case OF_KEY_DOWN: // touche ↓
+		is_key_press_down = true;
+		break;
+
+	case '+': // touche +
+		is_key_press_plus = true;
+		break;
+
+	case '-': // touche -
+		is_key_press_minus = true;
+		break;
+
+	case '/': // touche /
+		is_key_press_div = true;
+		break;
+
+	case '*': // touche -
+		is_key_press_mul = true;
+		break;
+
+	case '7': // touche 7
+		is_key_press_seven = true;
+		break;
+
+	case '8': // touche 8
+		is_key_press_eight = true;
+		break;
+
+	case '9': // touche 9
+		is_key_press_nine = true;
+		break;
+
+	default:
+		break;
+		/*Alex*/
+	}
 }
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key) {
+	switch (key)
+	{
+		case 111: // touche o
+			renderer.is_camera_perspective = false;
+			renderer.projection();
+			ofLog() << "<orthographic projection>";
+			break;
 
+		case 112: // touche p
+			renderer.is_camera_perspective = true;
+			renderer.projection();
+			ofLog() << "<perpective projection>";
+			break;
+
+		case 49: // touche 1
+			renderer.shader_active = ShaderType::color_fill;
+			ofLog() << "<shader: color fill>";
+			break;
+
+		case 50: // touche 2
+			renderer.shader_active = ShaderType::lambert;
+			ofLog() << "<shader: lambert>";
+			break;
+
+		case 51: // touche 3
+			renderer.shader_active = ShaderType::gouraud;
+			ofLog() << "<shader: gouraud>";
+			break;
+
+		case 52: // touche 4
+			renderer.shader_active = ShaderType::phong;
+			ofLog() << "<shader: phong>";
+			break;
+
+		case 53: // touche 5
+			renderer.shader_active = ShaderType::blinn_phong;
+			ofLog() << "<shader: blinn-phong>";
+			break;
+		case 54: // touche 6
+			
+			break;
+
+		case 55: // touche 7
+			is_key_press_seven = false;
+			break;
+/*Alex*/
+		case 56: // touche 8
+			is_key_press_eight = false;
+			break;
+
+		case 57: // touche 9
+			is_key_press_nine = false;
+			break;
+
+		case '/': // touche /
+			is_key_press_div = false;
+			break;
+
+		case '*': // touche -
+			is_key_press_mul = false;
+			break;
+
+		case OF_KEY_LEFT: // touche ←
+			is_key_press_left = false;
+			break;
+
+		case OF_KEY_UP: // touche ↑
+			is_key_press_up = false;
+			break;
+
+		case OF_KEY_RIGHT: // touche →
+			is_key_press_right = false;
+			break;
+
+		case OF_KEY_DOWN: // touche ↓
+			is_key_press_down = false;
+			break;
+
+		case '+': // touche +
+			is_key_press_plus = false;
+			break;
+
+		case '-': // touche -
+			is_key_press_minus = false;
+			break;
+/*Alex*/
+		default:
+			break;
+	}
 }
 
 //--------------------------------------------------------------
@@ -450,6 +621,7 @@ void ofApp::onChangeFiltrage(string name, bool value) {
 void ofApp::model_reset_pressed()
 {
 	renderer.model_reset();
+	renderer.setupCamera();
 }
 
 void ofApp::undo_pressed()
@@ -460,4 +632,63 @@ void ofApp::undo_pressed()
 void ofApp::redo_pressed()
 {
 	renderer.redo();
+}
+
+void ofApp::update_materials()
+{ 
+	switch (model_one_material)
+	{
+	case 1: 
+		renderer.model_material[0] = renderer.material_1;
+		break;
+	case 2:
+		renderer.model_material[0] = renderer.material_2;
+		break;
+	case 3:
+		renderer.model_material[0] = renderer.material_3;
+		break;
+	case 4:
+		renderer.model_material[0] = renderer.material_4;
+		break;
+	default:
+		renderer.model_material[0] = renderer.material_0;
+		break;
+	}
+
+	switch (model_two_material)
+	{
+	case 1:
+		renderer.model_material[1] = renderer.material_1;
+		break;
+	case 2:
+		renderer.model_material[1] = renderer.material_2;
+		break;
+	case 3:
+		renderer.model_material[1] = renderer.material_3;
+		break;
+	case 4:
+		renderer.model_material[1] = renderer.material_4;
+		break;
+	default:
+		renderer.model_material[1] = renderer.material_0;
+		break;
+	}
+	switch (model_three_material)
+	{
+	case 1:
+		renderer.model_material[2] = renderer.material_1;
+		break;
+	case 2:
+		renderer.model_material[2] = renderer.material_2;
+		break;
+	case 3:
+		renderer.model_material[2] = renderer.material_3;
+		break;
+	case 4:
+		renderer.model_material[2] = renderer.material_4;
+		break;
+	default:
+		renderer.model_material[2] = renderer.material_0;
+		break;
+	}
 }

@@ -9,6 +9,21 @@
 class ofApp : public ofBaseApp {
 
 public:
+	/*Alex*/
+
+	bool is_key_press_up;
+	bool is_key_press_down;
+	bool is_key_press_left;
+	bool is_key_press_right;
+	bool is_key_press_plus;
+	bool is_key_press_minus;
+	bool is_key_press_seven;
+	bool is_key_press_eight;
+	bool is_key_press_nine;
+	bool is_key_press_div;
+	bool is_key_press_mul;
+
+	/*Alex*/
 		Renderer renderer;
 		DraggableVertex draggableVertex;
 
@@ -57,6 +72,10 @@ public:
 		ofEventListener model_two_listener;
 		ofEventListener model_three_listener;
 
+		ofxIntSlider  model_one_material;
+		ofxIntSlider  model_two_material;
+		ofxIntSlider  model_three_material;
+
 		ofxGuiGroup group_draw, groupe2;
 		ofParameter<ofColor> color_picker_background;
 		ofParameter<ofColor> color_picker_stroke;
@@ -104,4 +123,5 @@ public:
 		void onChangeFiltrage(string name, bool value);
 		void undo_pressed();
 		void redo_pressed();
+		void update_materials();
 };
