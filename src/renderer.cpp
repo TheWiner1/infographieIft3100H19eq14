@@ -868,16 +868,20 @@ void Renderer::add_3d_model(ModelToDraw model) {
 	{
 	case ModelToDraw::modelOne:
 		models[0]->setPosition(vector_position.x, vector_position.y, vector_position.z);
-		models[0]->setRotation(0.0f, 180.0f, 0.0f, 1.0f, 0.0f);
+		//models[0]->setRotation(0.0f, 180.0f, 0.0f, 1.0f, 0.0f);
+		models[0]->setRotation(0.0f, 180.0f, 0.0f, 0.0f, 1.0f);
+		models[0]->setRotation(1.0f, 150.0f, 0.0f, 1.0f, 0.0f);
 		models[0]->setScale(vector_proportion.x, vector_proportion.y, vector_proportion.z);
 		break;
 	case ModelToDraw::modelTwo:
 		models[1]->setPosition(vector_position.x, vector_position.y, vector_position.z);
 		models[1]->setScale(vector_proportion.x, vector_proportion.y, vector_proportion.z);
+		models[1]->setRotation(0.0f, 180.0f, 0.0f, 0.0f, 1.0f);
 		break;
 	case ModelToDraw::modelThree:
 		models[2]->setPosition(vector_position.x, vector_position.y, vector_position.z);
 		models[2]->setScale(vector_proportion.x, vector_proportion.y, vector_proportion.z);
+		models[2]->setRotation(0.0f, 180.0f, 0.0f, 0.0f, 1.0f);
 		break;
 	default:
 		break;
