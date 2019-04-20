@@ -5,12 +5,14 @@
 #include "ofxOscParameterSync.h"
 #include "renderer.h"
 #include "draggableVertex.h"
+#include "topoParametrique.h"
 
 class ofApp : public ofBaseApp {
 
 public:
 		Renderer renderer;
 		DraggableVertex draggableVertex;
+		TopoParametrique topologieParametrique;
 
 		void setup();
 		void update();
@@ -27,6 +29,15 @@ public:
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
+
+		float time_current;
+		float time_last;
+		float time_elapsed;
+
+		bool is_key_press_up;
+		bool is_key_press_down;
+		bool is_key_press_left;
+		bool is_key_press_right;
 
 		ofxOscParameterSync sync;
 		ofxGuiGroup geometry_group;
@@ -88,6 +99,8 @@ public:
 		ofImage exportImg;
 
 		ofxButton tonemapping;
+
+		int selected_ctrl_point;
 
 		void ofxSetColorHSB(float h, float s, float b, float a);
 		int getBrightness(float r, float g, float b);

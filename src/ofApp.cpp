@@ -1,9 +1,14 @@
-#include "ofApp.h"
+﻿#include "ofApp.h"
 
 //--------------------------------------------------------------
 void ofApp::setup() {
 
 	ofSetWindowTitle("IFT-3100, Equipe 20");
+
+	is_key_press_up = false;
+	is_key_press_down = false;
+	is_key_press_left = false;
+	is_key_press_right = false;
 
 	// Parametres de couleurs.
 	int r = 255;
@@ -135,17 +140,34 @@ void ofApp::setup() {
 	// Initialisation variable.
 	checkbox1 = true;
 	rect = pixel = elipse = point = ligne = triangle = false;
+	selected_ctrl_point = 0;
 
 	exportCount = 1;
 	nFrames = 0;
 	renderer.setup();
 	draggableVertex.setup();
+	topologieParametrique.setup();
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
 	sync.update();
 	nFrames++;
+
+	time_current = ofGetElapsedTimef();
+	time_elapsed = time_current - time_last;
+	time_last = time_current;
+
+	if (topologieParametrique.afficher_courbe_parametrique) {
+		if (is_key_press_up)
+			topologieParametrique.selected_ctrl_point->y -= topologieParametrique.delta_y * time_elapsed;
+		if (is_key_press_down)
+			topologieParametrique.selected_ctrl_point->y += topologieParametrique.delta_y * time_elapsed;
+		if (is_key_press_left)
+			topologieParametrique.selected_ctrl_point->x -= topologieParametrique.delta_x * time_elapsed;
+		if (is_key_press_right)
+			topologieParametrique.selected_ctrl_point->x += topologieParametrique.delta_x * time_elapsed;
+	}
 
 	//RGB
 	if (!check) {
@@ -168,6 +190,7 @@ void ofApp::update() {
 
 	renderer.model_box = model_box;
 	renderer.update();
+	topologieParametrique.update();
 }
 
 //--------------------------------------------------------------
@@ -176,6 +199,8 @@ void ofApp::draw() {
 	if (draggable_show)
 		draggableVertex.draw();
 	gui.draw();
+
+	topologieParametrique.draw();
 
 	// Logique de capture d'ecran.
 	if (nFrames < recFrames && nFrames % 3 == 0) {
@@ -199,11 +224,68 @@ void ofApp::keyPressed(int key) {
 	if (key == 'x') {
 		recFrames = nFrames + 120;  // 2 sec @ 60 FrameRate
 	}
+
+	switch (key)
+	{
+	case OF_KEY_LEFT: // touche ←
+		is_key_press_left = true;
+		break;
+
+	case OF_KEY_UP: // touche ↑
+		is_key_press_up = true;
+		break;
+
+	case OF_KEY_RIGHT: // touche →
+		is_key_press_right = true;
+		break;
+
+	case OF_KEY_DOWN: // touche ↓
+		is_key_press_down = true;
+		break;
+
+	default:
+		break;
+	}
 }
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key) {
+	switch (key)
+	{
+	case OF_KEY_RIGHT_SHIFT:
+		selected_ctrl_point += 1;
+		if (selected_ctrl_point == 6)
+			selected_ctrl_point = 0;
+		topologieParametrique.selected_ctrl_point = &topologieParametrique.ctrl_points[selected_ctrl_point];
+		break;
 
+	case 109: // touche m
+		topologieParametrique.afficher_surface_parametrique = !topologieParametrique.afficher_surface_parametrique;
+		break;
+
+	case 110: // touche n
+		topologieParametrique.afficher_courbe_parametrique = !topologieParametrique.afficher_courbe_parametrique;
+		break;
+
+	case OF_KEY_LEFT: // touche ←
+		is_key_press_left = false;
+		break;
+
+	case OF_KEY_UP: // touche ↑
+		is_key_press_up = false;
+		break;
+
+	case OF_KEY_RIGHT: // touche →
+		is_key_press_right = false;
+		break;
+
+	case OF_KEY_DOWN: // touche ↓
+		is_key_press_down = false;
+		break;
+
+	default:
+		break;
+	}
 }
 
 //--------------------------------------------------------------
