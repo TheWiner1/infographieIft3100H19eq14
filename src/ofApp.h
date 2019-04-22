@@ -6,6 +6,7 @@
 #include "renderer.h"
 #include "draggableVertex.h"
 #include "ofxDelaunay.h"
+#define N_CAMERAS 3 // AJOUT SASSY 6.3
 
 class ofApp : public ofBaseApp {
 
@@ -18,7 +19,22 @@ public:
 		void setup();
 		void update();
 		void draw();
+		//AJOUT SASSY 6.3------------------------------------------------ -
+	    void setupViewports(); 
+		void drawScene(int iCameraDraw);
+		//cameras (all these inherit from ofCamera)
+		ofCamera camTop;
+		ofCamera camLeft;
 
+		//camera pointers
+		ofCamera * cameras[N_CAMERAS];
+		int iMainCamera; 
+
+		//viewports
+		ofRectangle viewMain; 
+		ofRectangle viewGrid[N_CAMERAS]; 
+
+		//--------------------------------------------------------
 	//variables camera;
 	ofCamera* camera;
 

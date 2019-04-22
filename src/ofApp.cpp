@@ -3,13 +3,14 @@
 //--------------------------------------------------------------
 void ofApp::setup() {
 
-	ofSetWindowTitle("modèle d'illumination : " + renderer.shader_name + " (1-5 ↑↓←→ r)");
+	ofSetWindowTitle("Partie 2: Équipe 14");
+	ofEnableSmoothing();
 
 	// Parametres de couleurs.
 	int r = 255;
 	int g = 255;
 	int b = 0;
-
+	
 	int h = getHue(r, g, b);
 	int s = getSaturation(r, g, b);
 	int br = getBrightness(r, g, b);
@@ -158,8 +159,34 @@ void ofApp::setup() {
 	camera_fov_delta = 16.0f;
 
 	camera_front.setPosition(ofGetWidth() / 2.0f, ofGetHeight() / 2.0f, 300.0f);
-
 	projection();
+
+
+	// AJOUT SASSY 6.3-------------------------------------------------
+    // Setup cameras
+	iMainCamera = 0; // indice camera
+
+	camTop.tiltDeg(-90);
+	camLeft.panDeg(-90);
+	
+	cameras[0] = &camera_front;
+	cameras[1] = &camTop;
+	cameras[2] = &camLeft;
+
+	for (size_t i = 1; i != N_CAMERAS; ++i) {
+		cameras[i]->setPosition(ofGetWidth() / 2.0f, ofGetHeight() / 2.0f, 300.0f);
+		cameras[i]->enableOrtho();
+		cameras[i]->setNearClip(0.1);
+        cameras[i]->setFarClip(10000);
+		//cameras[i]->setNearClip(camera_near);
+		//cameras[i]->setFarClip(camera_far);
+	}
+
+	// Define viewports
+	setupViewports();
+
+	//-----------------------------------------------------
+
 }
 
 //--------------------------------------------------------------
@@ -196,13 +223,21 @@ void ofApp::update() {
 		if (is_camera_fov_narrow)
 		{
 			camera_fov = std::max(camera_fov -= camera_fov_delta * time_elapsed, 0.0f);
-			camera->setFov(camera_fov);
+			//camera->setFov(camera_fov);
+			cameras[iMainCamera]->setFov(camera_fov);
+			for (size_t i = 0; i != N_CAMERAS; ++i) {
+				cameras[i]->setFov(camera_fov);
+			}
 		}
 
 		if (is_camera_fov_wide)
 		{
 			camera_fov = std::min(camera_fov += camera_fov_delta * time_elapsed, 180.0f);
-			camera->setFov(camera_fov);
+			//camera->setFov(camera_fov);
+			cameras[iMainCamera]->setFov(camera_fov);
+			for (size_t i = 0; i != N_CAMERAS; ++i) {
+				cameras[i]->setFov(camera_fov);
+			}
 		}
 	}
 	renderer.updateIllumination();
@@ -210,26 +245,74 @@ void ofApp::update() {
 
 //--------------------------------------------------------------
 void ofApp::draw() {
-	camera->begin();
-	camera->setScale(1, -1, 1);
 
-	renderer.draw();
-	if (draggable_show)
-		draggableVertex.draw();
-	if (delaunay_show) {
-		triangulation.draw();
-		ofDrawBitmapString("'r' to reset", ofPoint(10, 20));
+	//MODIFICATION DE TOUTE LA METHODE SASSY 6.3
+    // Highlight background of selected camera
+
+	ofPushStyle();
+	ofDisableDepthTest();
+	ofSetColor(0, 250, 100);
+	ofDrawRectangle(viewGrid[iMainCamera]);
+	ofEnableDepthTest();
+
+	ofSetColor(ofColor::white);
+	//----------------------------------------
+
+	cameras[iMainCamera]->begin(viewMain);
+	cameras[iMainCamera]->setScale(1, -1, 1);
+	//camera->begin();
+	//camera->setScale(1, -1, 1);
+
+	drawScene(iMainCamera);
+	//camera->end();
+	cameras[iMainCamera]->end();
+
+	// draw side viewports--------------------------
+	for (int i = 0; i < N_CAMERAS; i++) {
+		cameras[i]->setScale(3, -3, 3);
+		cameras[i]->begin(viewGrid[i]);
+		drawScene(i);
+		cameras[i]->end();
 	}
-	
-	// Logique de capture d'ecran.
-	if (nFrames < recFrames && nFrames % 3 == 0) {
-		captureFrame();
+
+	ofPopStyle();
+	//---------------------------------------------
+
+	// Draw annotations (text, gui, etc)
+
+	ofPushStyle();
+	ofDisableDepthTest();
+
+	// draw some labels
+	ofSetColor(255, 255, 255);
+	ofDrawBitmapString("Press keys 1-3 pour choisir une camera", viewMain.x + 20, 30);
+	ofDrawBitmapString("Camera choisie: " + ofToString(iMainCamera + 1), viewMain.x + 20, 50);
+	ofDrawBitmapString("Press 'f' pour plein ecran", viewMain.x + 20, 70);
+
+	ofDrawBitmapString("Principale (*Selectionner 'p'", viewGrid[0].x + 20, viewGrid[0].y + 30);
+	ofDrawBitmapString("perspective)(*Selectionner", viewGrid[0].x + 20, viewGrid[0].y + 45);
+	ofDrawBitmapString(" 'o'orthogonale)", viewGrid[0].x + 20, viewGrid[0].y + 60);
+	ofDrawBitmapString("Haut", viewGrid[1].x + 20, viewGrid[1].y + 30);
+	ofDrawBitmapString("Gauche", viewGrid[2].x + 20, viewGrid[2].y + 30);
+
+	// draw outlines on views
+	ofSetLineWidth(5);
+	ofNoFill();
+	ofSetColor(255, 255, 255);
+	//
+	for (int i = 0; i < N_CAMERAS; i++) {
+		ofDrawRectangle(viewGrid[i]);
 	}
-	if (nFrames == recFrames) {
-		recFrames = 0;
-	}
-	camera->end();
+
+	ofDrawRectangle(viewMain);
+
+	// restore the GL depth function
+
+	ofPopStyle();
+	//---------------------------------------------------------
+
 	gui.draw();
+	gui.setPosition(ofGetWidth() - 250, 0); // AJOUT SASSY
 }
 
 //--------------------------------------------------------------
@@ -249,6 +332,18 @@ void ofApp::keyPressed(int key) {
 	if (key == 'r') {
 		triangulation.reset();
 	}
+
+
+	//AJOUT SASSY 6.3------------------------------------------------
+	if (key >= '1' && key <= '3') {
+		iMainCamera = key - '1';
+	}
+
+	if (key == 'f') {
+		ofToggleFullscreen();
+	}
+
+	//-------------------------------------------------------
 }
 
 //--------------------------------------------------------------
@@ -366,7 +461,7 @@ void ofApp::mouseExited(int x, int y) {
 
 //--------------------------------------------------------------
 void ofApp::windowResized(int w, int h) {
-
+	setupViewports(); // AJOUT SASSY 6.3
 }
 
 //--------------------------------------------------------------
@@ -554,6 +649,7 @@ void ofApp::undo_pressed()
 
 void ofApp::projection() {
 	camera = &camera_front;
+
 	camera_position = camera->getPosition();
 	camera_orientation = camera->getOrientationQuat();
 
@@ -563,6 +659,7 @@ void ofApp::projection() {
 		camera->disableOrtho();
 		camera->setupPerspective(false, camera_fov, camera_near, camera_far, ofVec2f(0, 0));
 		camera_projection = "perspective";
+
 	}
 	else
 	{
@@ -577,4 +674,50 @@ void ofApp::projection() {
 void ofApp::redo_pressed()
 {
 	renderer.redo();
+}void ofApp::setupViewports() {
+
+	//AJOUT METHODE SASSY 6.3
+	//call here whenever we resize the window
+
+
+	//--
+	// Define viewports
+
+	float xOffset = ofGetWidth() / 4;
+	float yOffset = ofGetHeight() / N_CAMERAS;
+
+	viewMain.x = xOffset;
+	viewMain.y = 0;
+	viewMain.width = xOffset * 2;
+	viewMain.height = ofGetHeight();
+
+	for (int i = 0; i < N_CAMERAS; i++) {
+
+		viewGrid[i].x = 0;
+		viewGrid[i].y = yOffset * i;
+		viewGrid[i].width = xOffset;
+		viewGrid[i].height = yOffset;
+	}
+
+}
+
+//--------------------------------------------------------------
+void ofApp::drawScene(int cameraIndex) {
+
+	renderer.draw();
+	if (draggable_show)
+		draggableVertex.draw();
+	if (delaunay_show) {
+		triangulation.draw();
+		ofDrawBitmapString("'r' to reset", ofPoint(10, 20));
+	}
+
+	// Logique de capture d'ecran.
+	if (nFrames < recFrames && nFrames % 3 == 0) {
+		captureFrame();
+	}
+	if (nFrames == recFrames) {
+		recFrames = 0;
+	}
+
 }
