@@ -2,7 +2,7 @@
 
 //--------------------------------------------------------------
 void ofApp::setup() {
-
+	
 	ofSetWindowTitle("IFT-3100, Equipe 20");
 
 	// Parametres de couleurs.
@@ -33,6 +33,8 @@ void ofApp::setup() {
 	color_picker_stroke_hsb.set("Couleur du trait HSB", ofColor::fromHsb(h, s, br));
 
 	slider_stroke_weight.set("Epaisseur des lignes", 2.0f, 0.0f, 10.0f);
+
+	
 
 	group_draw.setup("Modifier un dessin 2D");
 	group_draw.add(color_picker_background);
@@ -93,14 +95,40 @@ void ofApp::setup() {
 	gui.add(&geometrie);
 
 	geometry_group.setup("Modeles 3D");
+	
 	geometry_group.add(model_one.set("Voiture", false));
-	model_one_listener = model_one.newListener([this](bool&) {onChangeGeometryGroup(model_one.getName(), model_one.get()); });
+	model_one_listener = model_one.newListener([this](bool&) 
+	{onChangeGeometryGroup(model_one.getName(), model_one.get()); });
+	
 	geometry_group.add(model_two.set("Loup", false));
-	model_two_listener = model_two.newListener([this](bool&) {onChangeGeometryGroup(model_two.getName(), model_two.get()); });
+	model_two_listener = model_two.newListener([this](bool&) 
+	{onChangeGeometryGroup(model_two.getName(), model_two.get()); });
+	
 	geometry_group.add(model_three.set("Cerf", false));
-	model_three_listener = model_three.newListener([this](bool&) {onChangeGeometryGroup(model_three.getName(), model_three.get()); });
-
+	model_three_listener = model_three.newListener([this](bool&) 
+	{onChangeGeometryGroup(model_three.getName(), model_three.get()); });
+	
+	geometry_group.add(model_four.set("cube", false));
+	model_four_listener = model_four.newListener([this](bool&)
+	 {onChangeGeometryGroup(model_four.getName(), model_four.get()); });
+	
+	geometry_group.add(model_five.set("sphere", false));
+	model_five_listener = model_five.newListener([this](bool&)
+	 {onChangeGeometryGroup(model_five.getName(), model_five.get()); });
+	
+	geometry_group.add(model_six.set("teapot", false));
+	model_six_listener = model_six.newListener([this](bool&)
+	 {onChangeGeometryGroup(model_six.getName(), model_six.get()); });
 	gui.add(&geometry_group);
+
+	posXgeo.set("pos X", 0.0f,0.0f,2000.0f);
+	posYgeo.set("pos Y", 0.0f,0.0f,800.0f);
+	posZgeo.set("pos Z", 0.0f,0.0f,100.0f);
+
+	geometry_group.add(posXgeo);
+	geometry_group.add(posYgeo);
+	geometry_group.add(posZgeo);
+
 	model_reset.setup("Effacer modeles");
 	model_reset.addListener(this, &ofApp::model_reset_pressed);
 	gui.add(&model_reset);
@@ -132,14 +160,58 @@ void ofApp::setup() {
 	gui.add(textboxX);
 	gui.add(textboxY);
 
+	eclairage.setup("Eclairage");
+	ambient.setName("lumiere ambiante");
+	directional.setName("lumiere directionnelle");
+	pointli.setName("lumiere ponctuelle");
+	spotli.setName("spotlight");
+	ambient = false;
+	directional = false;
+	pointli = false;
+	spotli = false;
+	eclairageDL.setName("eclairage dynamique");
+	eclairageDL =false;
+	eclairage.add(eclairageDL);
+	eclairage.add(ambient);
+	eclairage.add(directional);
+	eclairage.add(pointli);
+	eclairage.add(spotli);
+
+	pos_eclairage.setup("postion eclairage");
+	pos_amb.setName("ambiante");
+	pos_dir.setName("directionnelle");
+	pos_point.setName("ponctuelle");
+	pos_spot.setName("spot");
+	pos_amb = pos_dir = pos_point = pos_spot = false;
+	posX.set("pos X", 1000.0f,0.0f,2000.0f);
+	posY.set("pos Y", 1000.0f,0.0f,800.0f);
+	posZ.set("pos Z", 0.0f,-15.0f,2.0f);
+	
+
+	gui.add(&eclairage);
+	eclairage.add(&pos_eclairage);
+	pos_eclairage.add(pos_amb);
+	pos_eclairage.add(pos_dir);
+	pos_eclairage.add(pos_point);
+	pos_eclairage.add(pos_spot);
+	eclairage.add(posX);
+	eclairage.add(posY);
+	eclairage.add(posZ);
+
+	plusplus.setName("plus");
+	gui.add(plusplus);
 	// Initialisation variable.
 	checkbox1 = true;
 	rect = pixel = elipse = point = ligne = triangle = false;
-
+	
 	exportCount = 1;
 	nFrames = 0;
 	renderer.setup();
 	draggableVertex.setup();
+	ofAppDL.setup();
+	
+	//ofAppPLUS.setup();
+
 }
 
 //--------------------------------------------------------------
@@ -168,11 +240,22 @@ void ofApp::update() {
 
 	renderer.model_box = model_box;
 	renderer.update();
+	if(eclairageDL){			
+		//ofAppDL.setup();
+		ofAppDL.update();
+		//ofAppDL.draw();
+	}
+	//ofAppPLUS.update();
 }
 
 //--------------------------------------------------------------
 void ofApp::draw() {
 	renderer.draw();
+	if(eclairageDL){
+		//ofAppDL.setup();
+		//ofAppDL.update();
+		ofAppDL.draw();
+	}
 	if (draggable_show)
 		draggableVertex.draw();
 	gui.draw();
@@ -184,6 +267,81 @@ void ofApp::draw() {
 	if (nFrames == recFrames) {
 		recFrames = 0;
 	}
+
+	if(eclairageDL){
+		if(ambient)//: // key 1
+		
+		ofAppDL.rendererDynamicLight.is_active_ligh_ambient = !ofAppDL.rendererDynamicLight.is_active_ligh_ambient;
+		//ofLog() << "<light ambient: " << ofAppDL.rendererDynamicLight.is_active_ligh_ambient << ">";
+		//break;
+
+		if(directional) // key 2
+			ofAppDL.rendererDynamicLight.is_active_light_directional = !ofAppDL.rendererDynamicLight.is_active_light_directional;
+			//ofLog() << "<light directional: " << ofAppDL.rendererDynamicLight.is_active_light_directional << ">";
+			//break;
+
+		if(pointli)//: // key 3
+			ofAppDL.rendererDynamicLight.is_active_light_point = !ofAppDL.rendererDynamicLight.is_active_light_point;
+			//ofLog() << "<light point: " << ofAppDL.rendererDynamicLight.is_active_light_point << ">";
+			//break;
+
+		if(spotli)//case 52: // key 4
+			ofAppDL.rendererDynamicLight.is_active_light_spot = !ofAppDL.rendererDynamicLight.is_active_light_spot;
+			//ofLog() << "<light spot: " << rendererDynamicLight.is_active_light_spot << ">";
+			//break;
+		//if(pos_eclairage)
+		
+			if(pos_amb){
+				
+				pos_dir =false;
+				pos_point =false;
+				pos_spot = false;
+				ofAppDL.rendererDynamicLight.am_posX = posX;
+				ofAppDL.rendererDynamicLight.am_posY = posY;
+				ofAppDL.rendererDynamicLight.am_posZ = posZ;
+			}
+			if(pos_dir){
+				
+				pos_amb =false;
+				pos_point =false;
+				pos_spot = false;
+				ofAppDL.rendererDynamicLight.dir_posX = posX;
+				ofAppDL.rendererDynamicLight.dir_posY = posY;
+				ofAppDL.rendererDynamicLight.dir_posZ = posZ;
+			}
+			if(pos_point){
+				pos_amb =false;
+				pos_dir =false;
+				pos_spot = false;
+				ofAppDL.rendererDynamicLight.po_posX = posX;
+				ofAppDL.rendererDynamicLight.po_posY = posY;
+				ofAppDL.rendererDynamicLight.po_posZ = posZ;
+			}
+			if(pos_spot){
+				pos_amb =false;
+				pos_point =false;
+				pos_dir = false;
+				ofAppDL.rendererDynamicLight.spo_posX = posX;
+				ofAppDL.rendererDynamicLight.spo_posY = posY;
+				ofAppDL.rendererDynamicLight.spo_posZ = posZ;
+			
+			}
+
+	}
+	if(model_four)
+		ofAppDL.rendererDynamicLight.cub_posX = posXgeo;
+		ofAppDL.rendererDynamicLight.cub_posY = posYgeo;
+		ofAppDL.rendererDynamicLight.cub_posZ = posZgeo;
+	if(model_five)
+		ofAppDL.rendererDynamicLight.sphe_posX = posXgeo;
+		ofAppDL.rendererDynamicLight.sphe_posY = posYgeo;
+		ofAppDL.rendererDynamicLight.sphe_posZ = posZgeo;
+	if(model_six)
+		ofAppDL.rendererDynamicLight.tea_posX = posXgeo;
+		ofAppDL.rendererDynamicLight.tea_posY = posYgeo;
+		ofAppDL.rendererDynamicLight.tea_posZ = posZgeo;
+
+	//ofAppPLUS.draw();
 }
 
 //--------------------------------------------------------------
@@ -199,11 +357,17 @@ void ofApp::keyPressed(int key) {
 	if (key == 'x') {
 		recFrames = nFrames + 120;  // 2 sec @ 60 FrameRate
 	}
+
+	if(eclairageDL)
+		ofAppDL.keyPressed(key);
+	//ofAppPLUS.keyPressed(key);
 }
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key) {
-
+	if(eclairageDL)
+		ofAppDL.keyReleased(key);
+	//ofAppPLUS.keyReleased(key);
 }
 
 //--------------------------------------------------------------
@@ -217,6 +381,8 @@ void ofApp::mouseMoved(int x, int y) {
 	if (affiche_tex)
 		renderer.change_texture(x, y);
 	draggableVertex.mouseMoved(x, y);
+	//renderer.move_shapes(x,y);
+	//ofAppPLUS.mouseMoved(x,y);
 }
 
 //--------------------------------------------------------------
@@ -228,6 +394,7 @@ void ofApp::mouseDragged(int x, int y, int button) {
 	textboxY.set("Y", to_string(y));
 
 	draggableVertex.mouseDragged(x, y, button);
+	//ofAppPLUS.mouseDragged(x,y,button);
 }
 
 //--------------------------------------------------------------
@@ -241,6 +408,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 	renderer.mouse_press_y = y;
 
 	draggableVertex.mousePressed(x, y, button);
+	//ofAppPLUS.mousePressed(x,y,button);
 }
 
 //--------------------------------------------------------------
@@ -252,9 +420,13 @@ void ofApp::mouseReleased(int x, int y, int button) {
 
 	if (renderer.draw_mode != VectorPrimitiveType::none)
 		renderer.add_vector_shape(renderer.draw_mode);
-	if (model_one.get() || model_two.get() || model_three.get()) { renderer.add_3d_model(renderer.model_draw_mode); }
+	if (model_one.get() || model_two.get() || model_three.get()
+	|| model_four.get() || model_five.get()|| model_six.get()) {
+		renderer.add_3d_model(renderer.model_draw_mode);//, posXgeo, posYgeo, posZgeo); 
+		}
 
 	draggableVertex.mouseReleased(x, y, button);
+	//ofAppPLUS.mouseReleased(x, y, button);
 }
 
 //--------------------------------------------------------------
@@ -341,6 +513,7 @@ void ofApp::captureFrame() {
 
 void ofApp::reset_button_pressed() {
 	renderer.reset();
+	
 }
 
 void ofApp::onChangePrimitiveVectorielle(string name, bool value) {
@@ -393,15 +566,24 @@ void ofApp::tonemapping_pressed()
 void ofApp::onChangeGeometryGroup(string name, bool value) {
 	if (name == "Voiture") {
 		if (value) {
+
+			//model_one.set(false);
 			model_two.set(false);
 			model_three.set(false);
+			model_four.set(false);
+			model_five.set(false);
+			model_six.set(false);
 			renderer.model_draw_mode = ModelToDraw::modelOne;
 		}
 	}
 	else if (name == "Loup") {
 		if (value) {
 			model_one.set(false);
+			//model_two.set(false);
 			model_three.set(false);
+			model_four.set(false);
+			model_five.set(false);
+			model_six.set(false);
 			renderer.model_draw_mode = ModelToDraw::modelTwo;
 		}
 	}
@@ -409,7 +591,47 @@ void ofApp::onChangeGeometryGroup(string name, bool value) {
 		if (value) {
 			model_one.set(false);
 			model_two.set(false);
+			//model_three.set(false);
+			model_four.set(false);
+			model_five.set(false);
+			model_six.set(false);
 			renderer.model_draw_mode = ModelToDraw::modelThree;
+		}
+	}
+	else if (name == "Cube") {
+		if (value) {
+			model_one.set(false);
+			model_two.set(false);
+			model_three.set(false);
+			//model_four.set(false);
+			model_five.set(false);
+			model_six.set(false);
+			renderer.model_draw_mode = ModelToDraw::modelFour;
+			ofAppDL.rendererDynamicLight.iscube = true;
+		}
+	}
+	else if (name == "Sphere") {
+		if (value) {
+			model_one.set(false);
+			model_two.set(false);
+			model_three.set(false);
+			model_four.set(false);
+			//model_five.set(false);
+			model_six.set(false);
+			renderer.model_draw_mode = ModelToDraw::modelFive;
+			ofAppDL.rendererDynamicLight.issphere = true;
+		}
+	}
+	else if (name == "Teapot") {
+		if (value) {
+			model_one.set(false);
+			model_two.set(false);
+			model_three.set(false);
+			model_four.set(false);
+			model_five.set(false);
+			//model_six.set(false);
+			renderer.model_draw_mode = ModelToDraw::modelSix;
+			ofAppDL.rendererDynamicLight.isteapot = true;
 		}
 	}
 }

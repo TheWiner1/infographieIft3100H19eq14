@@ -4,12 +4,18 @@
 #include "ofxGui.h"
 #include "ofxOscParameterSync.h"
 #include "renderer.h"
+#include "rendererPlus.h"
+#include "renderer_Dynamic_Light.h"
+#include "application_Dynamic_Light.h"
+#include "applicationPlus.h"
 #include "draggableVertex.h"
 
 class ofApp : public ofBaseApp {
 
 public:
 		Renderer renderer;
+		ApplicationDynamicLight ofAppDL;
+		ApplicationPlus ofAppPLUS;
 		DraggableVertex draggableVertex;
 
 		void setup();
@@ -30,9 +36,11 @@ public:
 
 		ofxOscParameterSync sync;
 		ofxGuiGroup geometry_group;
+		
+
 		ofParameter<bool> model_one;
 		ofParameter<bool> model_two;
-		ofParameter<bool> model_three;
+		ofParameter<bool> model_three, model_four, model_five, model_six;
 		ofxButton model_reset;
 		ofParameter<bool> model_box;
 		ofxGuiGroup trans_interactive;
@@ -56,7 +64,9 @@ public:
 		ofEventListener model_one_listener;
 		ofEventListener model_two_listener;
 		ofEventListener model_three_listener;
-
+		ofEventListener model_four_listener;
+		ofEventListener model_five_listener;
+		ofEventListener model_six_listener;
 		ofxGuiGroup group_draw, groupe2;
 		ofParameter<ofColor> color_picker_background;
 		ofParameter<ofColor> color_picker_stroke;
@@ -66,7 +76,12 @@ public:
 		ofParameter<ofColor> color_picker_fill_hsb;
 		ofParameter<float> slider_stroke_weight;
 		ofParameter<string> textbox;
-		ofParameter<bool> checkbox1, rect, point, pixel, ligne, elipse, triangle;
+		ofParameter<bool> checkbox1, rect, point, pixel, ligne,
+
+		elipse, triangle, eclairageDL, plusplus;
+		ofParameter<float> posX, posXgeo;
+		ofParameter<float> posY, posYgeo;
+		ofParameter<float> posZ, posZgeo;
 		ofxButton reset_button, undo, redo;
 		ofEventListener pixel_listener;
 		ofEventListener point_listener;
@@ -74,13 +89,17 @@ public:
 		ofEventListener rect_listener;
 		ofEventListener elipse_listener;
 		ofEventListener triangle_listener;
-
+	
 		ofxGuiGroup filter_group;
 		ofParameter<bool> aucun_filtre, grayscale, seuil, lissage, seuilLissage;
 		ofEventListener aucun_filtre_listener, grayscale_listener, seuil_listener, lissage_listener, seuilLissage_listener;
 
 		ofParameter<string> textboxX;
 		ofParameter<string> textboxY;
+		ofxGuiGroup eclairage, pos_eclairage;
+		ofParameter<bool> ambient, directional, pointli, spotli, pos_amb, pos_geometry,
+		pos_dir, pos_point, pos_spot;  
+		
 
 		int nFrames;
 		int recFrames;
