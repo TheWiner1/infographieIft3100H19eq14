@@ -3,8 +3,10 @@
 #include "ofMain.h"
 #include "ofxAssimpModelLoader.h"
 #include "ofxOpenCv.h"
-//#include "rendererPlus.h"
+#include "rendererPlus.h"
 #include "renderer_Dynamic_Light.h"
+//#include "ofPoint.h"
+//#include "Vector.h"
 
 enum class VectorPrimitiveType { none, pixel, point, line, rectangle, ellipse, triangle };
 enum class ModelToDraw { modelOne, modelTwo, modelThree, modelFour, modelFive, modelSix };
@@ -92,9 +94,9 @@ public:
 	int selectedModel = 0;
 	ofxAssimpModelLoader* modelsMirror[3];
 	float mirror_z;
-	//ofxAssimpModelLoader model_one_mirror;
-	//ofxAssimpModelLoader model_two_mirror;
-	//ofxAssimpModelLoader model_three_mirror;
+	ofxAssimpModelLoader model_one_mirror;
+	ofxAssimpModelLoader model_two_mirror;
+	ofxAssimpModelLoader model_three_mirror;
 
 	ModelToDraw model_draw_mode;
 
@@ -254,12 +256,9 @@ public:
 
 	~Renderer();
 
-	 void select_shapes(int x, int y);
-  void move_shapes(int x, int y);
-  void delete_selected_shapes();
-  void selectAll();
-  void deselectAll();
-
-
-
+	void select_shapes(int x, int y);
+  	void move_shapes(int x, int y);
+  	void delete_selected_shapes();
+  	void selectAll();
+  	void deselectAll();
 };
