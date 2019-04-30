@@ -1,0 +1,14 @@
+# Ignore
+/.vs
+/bin/*
+/obj
+icon.rc
+infographieIft3100H19eq14.sln
+infographieIft3100H19eq14.vcxproj
+infographieIft3100H19eq14.vcxproj.filters
+infographieIft3100H19eq14.vcxproj.user
+README.md
+
+# Data utile
+!/bin/data/*.obj
+!/bin/data/*.jpg
