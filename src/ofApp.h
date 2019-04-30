@@ -5,16 +5,90 @@
 #include "ofxOscParameterSync.h"
 #include "renderer.h"
 #include "draggableVertex.h"
+#include "ofxDelaunay.h"
+#include "topoParametrique.h"
+#define N_CAMERAS 3 // AJOUT SASSY 6.3
 
 class ofApp : public ofBaseApp {
 
 public:
+	/*Alex*/
+
+	/*bool is_key_press_up;
+	bool is_key_press_down;
+	bool is_key_press_left;
+	bool is_key_press_right;*/
+	bool is_key_press_plus;
+	bool is_key_press_minus;
+	bool is_key_press_seven;
+	bool is_key_press_eight;
+	bool is_key_press_nine;
+	bool is_key_press_div;
+	bool is_key_press_mul;
+
+	/*Alex*/
 		Renderer renderer;
 		DraggableVertex draggableVertex;
+		TopoParametrique topologieParametrique;
+
+		ofxDelaunay triangulation;//triangularisation
 
 		void setup();
 		void update();
 		void draw();
+		//AJOUT SASSY 6.3------------------------------------------------ -
+	    void setupViewports(); 
+		void drawScene(int iCameraDraw);
+		//cameras (all these inherit from ofCamera)
+		ofCamera camTop;
+		ofCamera camLeft;
+
+		//camera pointers
+		ofCamera * cameras[N_CAMERAS];
+		int iMainCamera; 
+
+		//viewports
+		ofRectangle viewMain; 
+		ofRectangle viewGrid[N_CAMERAS]; 
+
+		//--------------------------------------------------------
+	//variables camera;
+	ofCamera* camera;
+
+	ofCamera camera_front;
+
+	bool is_camera_perspective;
+
+	ofQuaternion camera_orientation;
+
+	ofVec3f camera_position;
+	ofVec3f camera_target;
+
+	string camera_name;
+	string camera_projection;
+
+	float camera_near;
+	float camera_far;
+
+	float camera_fov;
+	float camera_fov_delta;
+
+	bool is_camera_fov_narrow;
+	bool is_camera_fov_wide;
+
+	float time_current;
+	float time_last;
+	float time_elapsed;
+	// fin variables  camera
+
+	bool is_key_press_up;
+	bool is_key_press_down;
+	bool is_key_press_left;
+	bool is_key_press_right;
+
+	int selected_ctrl_point;
+
+	void projection();
 
 		void keyPressed(int key);
 		void keyReleased(int key);
@@ -34,12 +108,14 @@ public:
 		ofParameter<bool> model_two;
 		ofParameter<bool> model_three;
 		ofxButton model_reset;
+		ofParameter<bool> model_mirror;
+		ofParameter<bool> model_lookAt;
 		ofParameter<bool> model_box;
 		ofxGuiGroup trans_interactive;
-		ofParameter<bool> draggable_show;
+		ofParameter<bool> draggable_show,delaunay_show;
 		ofxGuiGroup tex_procedural;
 		ofParameter<bool> affiche_tex;
-		ofxGuiGroup geometrie;
+		ofxGuiGroup geometrie,topologie;
 		ofParameter<bool> affiche_pyramide;
 		ofParameter<bool> affiche_sphere;
 		ofEventListener pyramide_listener;
@@ -56,6 +132,10 @@ public:
 		ofEventListener model_one_listener;
 		ofEventListener model_two_listener;
 		ofEventListener model_three_listener;
+
+		ofxIntSlider  model_one_material;
+		ofxIntSlider  model_two_material;
+		ofxIntSlider  model_three_material;
 
 		ofxGuiGroup group_draw, groupe2;
 		ofParameter<ofColor> color_picker_background;
@@ -104,4 +184,5 @@ public:
 		void onChangeFiltrage(string name, bool value);
 		void undo_pressed();
 		void redo_pressed();
+		void update_materials();
 };

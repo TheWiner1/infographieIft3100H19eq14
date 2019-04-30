@@ -1,15 +1,16 @@
-#include "ofApp.h"
+﻿#include "ofApp.h"
 
 //--------------------------------------------------------------
 void ofApp::setup() {
 
-	ofSetWindowTitle("IFT-3100, Equipe 20");
+	ofSetWindowTitle("Partie 2: Équipe 14");
+	ofEnableSmoothing();
 
 	// Parametres de couleurs.
 	int r = 255;
 	int g = 255;
 	int b = 0;
-
+	
 	int h = getHue(r, g, b);
 	int s = getSaturation(r, g, b);
 	int br = getBrightness(r, g, b);
@@ -95,12 +96,20 @@ void ofApp::setup() {
 	geometry_group.setup("Modeles 3D");
 	geometry_group.add(model_one.set("Voiture", false));
 	model_one_listener = model_one.newListener([this](bool&) {onChangeGeometryGroup(model_one.getName(), model_one.get()); });
+	geometry_group.add(model_one_material.setup("Matériau voiture",2,0,4));
+	model_one_listener = model_one.newListener([this](bool&) {onChangeGeometryGroup(model_one.getName(), model_one.get()); });
+
 	geometry_group.add(model_two.set("Loup", false));
 	model_two_listener = model_two.newListener([this](bool&) {onChangeGeometryGroup(model_two.getName(), model_two.get()); });
+	geometry_group.add(model_two_material.setup("Matériau loup", 0, 0, 4));
+
 	geometry_group.add(model_three.set("Cerf", false));
 	model_three_listener = model_three.newListener([this](bool&) {onChangeGeometryGroup(model_three.getName(), model_three.get()); });
+	geometry_group.add(model_three_material.setup("Matériau cerf", 4, 0, 4));
 
 	gui.add(&geometry_group);
+	gui.add(model_lookAt.set("Regarder vers", false));
+	gui.add(model_mirror.set("Mirroir modeles", false));
 	model_reset.setup("Effacer modeles");
 	model_reset.addListener(this, &ofApp::model_reset_pressed);
 	gui.add(&model_reset);
@@ -132,6 +141,12 @@ void ofApp::setup() {
 	gui.add(textboxX);
 	gui.add(textboxY);
 
+	//triangulation de Delaunay
+	topologie.setup("triangulation de Delaunay");
+	delaunay_show.set("triangulation", false);
+	topologie.add(delaunay_show);
+	gui.add(&topologie);
+
 	// Initialisation variable.
 	checkbox1 = true;
 	rect = pixel = elipse = point = ligne = triangle = false;
@@ -140,6 +155,55 @@ void ofApp::setup() {
 	nFrames = 0;
 	renderer.setup();
 	draggableVertex.setup();
+	renderer.setupIllumination();
+	//renderer.setupCamera();
+
+	ofEnableDepthTest();
+
+	camera_near = 50.0f;
+	camera_far = 1550.0f;
+
+	camera_fov = 60.0f;
+	camera_fov_delta = 16.0f;
+
+	camera_front.setPosition(ofGetWidth() / 2.0f, ofGetHeight() / 2.0f, 300.0f);
+	projection();
+
+
+	// AJOUT SASSY 6.3-------------------------------------------------
+    // Setup cameras
+	iMainCamera = 0; // indice camera
+
+	camTop.tiltDeg(-90);
+	camLeft.panDeg(-90);
+	
+	cameras[0] = &camera_front;
+	renderer.camera = &camera_front;
+	cameras[1] = &camTop;
+	cameras[2] = &camLeft;
+
+	for (size_t i = 1; i != N_CAMERAS; ++i) {
+		cameras[i]->setPosition(ofGetWidth() / 2.0f, ofGetHeight() / 2.0f, 300.0f);
+		cameras[i]->enableOrtho();
+		cameras[i]->setNearClip(0.1);
+        cameras[i]->setFarClip(10000);
+		//cameras[i]->setNearClip(camera_near);
+		//cameras[i]->setFarClip(camera_far);
+	}
+
+	// Define viewports
+	setupViewports();
+
+	//-----------------------------------------------------
+
+	is_key_press_up = false;
+	is_key_press_down = false;
+	is_key_press_left = false;
+	is_key_press_right = false;
+
+	selected_ctrl_point = 0;
+
+	topologieParametrique.setup();
 }
 
 //--------------------------------------------------------------
@@ -155,7 +219,7 @@ void ofApp::update() {
 	}
 	//HSB
 	else {
-		renderer.background_color = color_picker_background_hsb;
+		renderer.background_color = color_picker_background_hsb;//couleur de la 3D
 		renderer.stroke_fill = color_picker_fill_hsb;
 		renderer.stroke_color = color_picker_stroke_hsb;
 	}
@@ -168,22 +232,142 @@ void ofApp::update() {
 
 	renderer.model_box = model_box;
 	renderer.update();
+	renderer.updateCamera();
+	update_materials(); // Alex
+	time_current = ofGetElapsedTimef();
+	time_elapsed = time_current - time_last;
+	time_last = time_current;
+
+	if (is_camera_perspective)
+	{
+		if (is_camera_fov_narrow)
+		{
+			camera_fov = std::max(camera_fov -= camera_fov_delta * time_elapsed, 0.0f);
+			//camera->setFov(camera_fov);
+			cameras[iMainCamera]->setFov(camera_fov);
+			for (size_t i = 0; i != N_CAMERAS; ++i) {
+				cameras[i]->setFov(camera_fov);
+			}
+		}
+
+		if (is_camera_fov_wide)
+		{
+			camera_fov = std::min(camera_fov += camera_fov_delta * time_elapsed, 180.0f);
+			//camera->setFov(camera_fov);
+			cameras[iMainCamera]->setFov(camera_fov);
+			for (size_t i = 0; i != N_CAMERAS; ++i) {
+				cameras[i]->setFov(camera_fov);
+			}
+		}
+	}
+	renderer.updateIllumination();	
+		/*Alex TODO if avec camera*/
+	renderer.is_camera_move_forward = is_key_press_plus;
+	renderer.is_camera_move_backward = is_key_press_minus;
+	if (!topologieParametrique.afficher_courbe_parametrique) //Alex
+	{
+		renderer.is_camera_move_left = is_key_press_left;
+		renderer.is_camera_move_right = is_key_press_right;
+
+		renderer.is_camera_move_up = is_key_press_up;
+		renderer.is_camera_move_down = is_key_press_down;
+	}
+	renderer.is_camera_roll_left = is_key_press_eight;
+	renderer.is_camera_roll_right = is_key_press_nine;
+
+
+	renderer.is_camera_pan_left = is_key_press_div;
+	renderer.is_camera_pan_right = is_key_press_mul;
+
+	renderer.is_camera_look_at = model_lookAt;
+	renderer.model_mirror = model_mirror;
+
+	if (topologieParametrique.afficher_courbe_parametrique) {
+		if (is_key_press_up)
+			topologieParametrique.selected_ctrl_point->y -= topologieParametrique.speed * time_elapsed;
+		if (is_key_press_down)
+			topologieParametrique.selected_ctrl_point->y += topologieParametrique.speed * time_elapsed;
+		if (is_key_press_left)
+			topologieParametrique.selected_ctrl_point->x -= topologieParametrique.speed * time_elapsed;
+		if (is_key_press_right)
+			topologieParametrique.selected_ctrl_point->x += topologieParametrique.speed * time_elapsed;
+	}
+	topologieParametrique.update();
 }
 
 //--------------------------------------------------------------
 void ofApp::draw() {
-	renderer.draw();
-	if (draggable_show)
-		draggableVertex.draw();
+
+	//MODIFICATION DE TOUTE LA METHODE SASSY 6.3
+    // Highlight background of selected camera
+
+	ofPushStyle();
+	ofDisableDepthTest();
+	ofSetColor(0, 250, 100);
+	ofDrawRectangle(viewGrid[iMainCamera]);
+	ofEnableDepthTest();
+
+	ofSetColor(ofColor::white);
+	//----------------------------------------
+
+	cameras[iMainCamera]->begin(viewMain);
+	cameras[iMainCamera]->setScale(1, -1, 1);
+	//camera->begin();
+	//camera->setScale(1, -1, 1);
+
+	drawScene(iMainCamera);
+	//camera->end();
+	cameras[iMainCamera]->end();
+
+	// draw side viewports--------------------------
+	for (int i = 0; i < N_CAMERAS; i++) {
+		cameras[i]->setScale(3, -3, 3);
+		cameras[i]->begin(viewGrid[i]);
+		drawScene(i);
+		cameras[i]->end();
+	}
+
+	ofPopStyle();
+	//---------------------------------------------
+
+	// Draw annotations (text, gui, etc)
+
+	ofPushStyle();
+	ofDisableDepthTest();
+
+	// draw some labels
+	ofSetColor(255, 255, 255);
+	ofDrawBitmapString("Press keys 1-3 pour choisir une camera", viewMain.x + 20, 30);
+	ofDrawBitmapString("Camera choisie: " + ofToString(iMainCamera + 1), viewMain.x + 20, 50);
+	ofDrawBitmapString("Press 'f' pour plein ecran", viewMain.x + 20, 70);
+
+	ofDrawBitmapString("Principale (*Selectionner 'p'", viewGrid[0].x + 20, viewGrid[0].y + 30);
+	ofDrawBitmapString("perspective)(*Selectionner", viewGrid[0].x + 20, viewGrid[0].y + 45);
+	ofDrawBitmapString(" 'o'orthogonale)", viewGrid[0].x + 20, viewGrid[0].y + 60);
+	ofDrawBitmapString("Haut", viewGrid[1].x + 20, viewGrid[1].y + 30);
+	ofDrawBitmapString("Gauche", viewGrid[2].x + 20, viewGrid[2].y + 30);
+
+	// draw outlines on views
+	ofSetLineWidth(5);
+	ofNoFill();
+	ofSetColor(255, 255, 255);
+	//
+	for (int i = 0; i < N_CAMERAS; i++) {
+		ofDrawRectangle(viewGrid[i]);
+	}
+
+	ofDrawRectangle(viewMain);
+
+	// restore the GL depth function
+
+	ofPopStyle();
+	//---------------------------------------------------------
+
 	gui.draw();
 
-	// Logique de capture d'ecran.
-	if (nFrames < recFrames && nFrames % 3 == 0) {
-		captureFrame();
-	}
-	if (nFrames == recFrames) {
-		recFrames = 0;
-	}
+	topologieParametrique.draw();
+
+	gui.setPosition(ofGetWidth() - 250, 0); // AJOUT SASSY
 }
 
 //--------------------------------------------------------------
@@ -199,11 +383,177 @@ void ofApp::keyPressed(int key) {
 	if (key == 'x') {
 		recFrames = nFrames + 120;  // 2 sec @ 60 FrameRate
 	}
+
+	if (key == 'r') {
+		triangulation.reset();
+	}
+
+
+	//AJOUT SASSY 6.3------------------------------------------------
+	if (key >= '1' && key <= '3') {
+		iMainCamera = key - '1';
+	}
+
+	if (key == 'f') {
+		ofToggleFullscreen();
+	}
+
+	//-------------------------------------------------------
+
+	switch (key)
+	{
+	case OF_KEY_LEFT: // touche ←
+		is_key_press_left = true;
+		break;
+
+	case OF_KEY_UP: // touche ↑
+		is_key_press_up = true;
+		break;
+
+	case OF_KEY_RIGHT: // touche →
+		is_key_press_right = true;
+		break;
+
+	case OF_KEY_DOWN: // touche ↓
+		is_key_press_down = true;
+		break;
+
+	case '+': // touche +
+		is_key_press_plus = true;
+		break;
+
+	case '-': // touche -
+		is_key_press_minus = true;
+		break;
+
+	case '/': // touche /
+		is_key_press_div = true;
+		break;
+
+	case '*': // touche -
+		is_key_press_mul = true;
+		break;
+
+	case '7': // touche 7
+		is_key_press_seven = true;
+		break;
+
+	case '8': // touche 8
+		is_key_press_eight = true;
+		break;
+
+	case '9': // touche 9
+		is_key_press_nine = true;
+		break;
+
+	default:
+		break;
+	}
 }
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key) {
+	switch (key)
+	{
+		case 111: // touche o
+			is_camera_perspective = false;
+			projection();
+			ofLog() << "<orthographic projection>";
+			break;
 
+		case 112: // touche p
+			is_camera_perspective = true;
+			projection();
+			ofLog() << "<perpective projection>";
+			break;
+
+		case 49: // touche 1
+			renderer.shader_active = ShaderType::color_fill;
+			ofLog() << "<shader: color fill>";
+			break;
+
+		case 50: // touche 2
+			renderer.shader_active = ShaderType::lambert;
+			ofLog() << "<shader: lambert>";
+			break;
+
+		case 51: // touche 3
+			renderer.shader_active = ShaderType::gouraud;
+			ofLog() << "<shader: gouraud>";
+			break;
+
+		case 52: // touche 4
+			renderer.shader_active = ShaderType::phong;
+			ofLog() << "<shader: phong>";
+			break;
+
+		case 53: // touche 5
+			renderer.shader_active = ShaderType::blinn_phong;
+			ofLog() << "<shader: blinn-phong>";
+			break;
+
+		case OF_KEY_RIGHT_SHIFT:
+			selected_ctrl_point += 1;
+			if (selected_ctrl_point == 6)
+				selected_ctrl_point = 0;
+			topologieParametrique.selected_ctrl_point = &topologieParametrique.ctrl_points[selected_ctrl_point];
+			break;
+
+		case 98: // touche b : reinitialise la position des points de la courbe parametrique. 
+			topologieParametrique.reset();
+			break;
+
+		case 109: // touche m 
+			topologieParametrique.afficher_surface_parametrique = !topologieParametrique.afficher_surface_parametrique;
+			break;
+
+		case 110: // touche n 
+			topologieParametrique.afficher_courbe_parametrique = !topologieParametrique.afficher_courbe_parametrique;
+			break;
+/*Alex*/
+		case 56: // touche 8
+			is_key_press_eight = false;
+			break;
+
+		case 57: // touche 9
+			is_key_press_nine = false;
+			break;
+
+		case '/': // touche /
+			is_key_press_div = false;
+			break;
+
+		case '*': // touche -
+			is_key_press_mul = false;
+			break;
+
+		case OF_KEY_LEFT: // touche ←
+			is_key_press_left = false;
+			break;
+
+		case OF_KEY_UP: // touche ↑
+			is_key_press_up = false;
+			break;
+
+		case OF_KEY_RIGHT: // touche →
+			is_key_press_right = false;
+			break;
+
+		case OF_KEY_DOWN: // touche ↓
+			is_key_press_down = false;
+			break;
+
+		case '+': // touche +
+			is_key_press_plus = false;
+			break;
+
+		case '-': // touche -
+			is_key_press_minus = false;
+			break;
+/*Alex*/
+		default:
+			break;
+	}
 }
 
 //--------------------------------------------------------------
@@ -255,6 +605,10 @@ void ofApp::mouseReleased(int x, int y, int button) {
 	if (model_one.get() || model_two.get() || model_three.get()) { renderer.add_3d_model(renderer.model_draw_mode); }
 
 	draggableVertex.mouseReleased(x, y, button);
+
+	//pour la gestion de la triangularisation
+	triangulation.addPoint(ofPoint(x, y));
+	triangulation.triangulate();
 }
 
 //--------------------------------------------------------------
@@ -271,7 +625,7 @@ void ofApp::mouseExited(int x, int y) {
 
 //--------------------------------------------------------------
 void ofApp::windowResized(int w, int h) {
-
+	setupViewports(); // AJOUT SASSY 6.3
 }
 
 //--------------------------------------------------------------
@@ -391,11 +745,13 @@ void ofApp::tonemapping_pressed()
 }
 
 void ofApp::onChangeGeometryGroup(string name, bool value) {
+	renderer.selectedModel = 0;
 	if (name == "Voiture") {
 		if (value) {
 			model_two.set(false);
 			model_three.set(false);
 			renderer.model_draw_mode = ModelToDraw::modelOne;
+			renderer.selectedModel = 1;
 		}
 	}
 	else if (name == "Loup") {
@@ -403,6 +759,7 @@ void ofApp::onChangeGeometryGroup(string name, bool value) {
 			model_one.set(false);
 			model_three.set(false);
 			renderer.model_draw_mode = ModelToDraw::modelTwo;
+			renderer.selectedModel = 2;
 		}
 	}
 	else if (name == "Cerf") {
@@ -410,6 +767,8 @@ void ofApp::onChangeGeometryGroup(string name, bool value) {
 			model_one.set(false);
 			model_two.set(false);
 			renderer.model_draw_mode = ModelToDraw::modelThree;
+			renderer.selectedModel = 3;
+
 		}
 	}
 }
@@ -457,7 +816,137 @@ void ofApp::undo_pressed()
 	renderer.undo();
 }
 
+void ofApp::projection() {
+	camera = &camera_front;
+	renderer.camera = &camera_front;
+
+	camera_position = camera->getPosition();
+	camera_orientation = camera->getOrientationQuat();
+
+	// mode de projection de la caméra
+	if (is_camera_perspective)
+	{
+		camera->disableOrtho();
+		camera->setupPerspective(false, camera_fov, camera_near, camera_far, ofVec2f(0, 0));
+		camera_projection = "perspective";
+
+	}
+	else
+	{
+		camera->enableOrtho();
+		camera_projection = "orthogonale";
+	}
+
+	camera->setPosition(camera_position);
+	camera->setOrientation(camera_orientation);
+}
+
 void ofApp::redo_pressed()
 {
 	renderer.redo();
+}void ofApp::setupViewports() {
+
+	//AJOUT METHODE SASSY 6.3
+	//call here whenever we resize the window
+
+
+	//--
+	// Define viewports
+
+	float xOffset = ofGetWidth() / 4;
+	float yOffset = ofGetHeight() / N_CAMERAS;
+
+	viewMain.x = xOffset;
+	viewMain.y = 0;
+	viewMain.width = xOffset * 2;
+	viewMain.height = ofGetHeight();
+
+	for (int i = 0; i < N_CAMERAS; i++) {
+
+		viewGrid[i].x = 0;
+		viewGrid[i].y = yOffset * i;
+		viewGrid[i].width = xOffset;
+		viewGrid[i].height = yOffset;
+	}
+
+}
+
+//--------------------------------------------------------------
+void ofApp::drawScene(int cameraIndex) {
+
+	renderer.draw();
+	if (draggable_show)
+		draggableVertex.draw();
+	if (delaunay_show) {
+		triangulation.draw();
+		ofDrawBitmapString("'r' to reset", ofPoint(10, 20));
+	}
+
+	// Logique de capture d'ecran.
+	if (nFrames < recFrames && nFrames % 3 == 0) {
+		captureFrame();
+	}
+	if (nFrames == recFrames) {
+		recFrames = 0;
+	}
+
+}
+
+void ofApp::update_materials()
+{
+	switch (model_one_material)
+	{
+	case 1:
+		renderer.model_material[0] = renderer.material_1;
+		break;
+	case 2:
+		renderer.model_material[0] = renderer.material_2;
+		break;
+	case 3:
+		renderer.model_material[0] = renderer.material_3;
+		break;
+	case 4:
+		renderer.model_material[0] = renderer.material_4;
+		break;
+	default:
+		renderer.model_material[0] = renderer.material_0;
+		break;
+	}
+
+	switch (model_two_material)
+	{
+	case 1:
+		renderer.model_material[1] = renderer.material_1;
+		break;
+	case 2:
+		renderer.model_material[1] = renderer.material_2;
+		break;
+	case 3:
+		renderer.model_material[1] = renderer.material_3;
+		break;
+	case 4:
+		renderer.model_material[1] = renderer.material_4;
+		break;
+	default:
+		renderer.model_material[1] = renderer.material_0;
+		break;
+	}
+	switch (model_three_material)
+	{
+	case 1:
+		renderer.model_material[2] = renderer.material_1;
+		break;
+	case 2:
+		renderer.model_material[2] = renderer.material_2;
+		break;
+	case 3:
+		renderer.model_material[2] = renderer.material_3;
+		break;
+	case 4:
+		renderer.model_material[2] = renderer.material_4;
+		break;
+	default:
+		renderer.model_material[2] = renderer.material_0;
+		break;
+	}
 }
