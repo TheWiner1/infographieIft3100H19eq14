@@ -309,7 +309,7 @@ void ofApp::draw() {
 
 	ofSetColor(ofColor::white);
 	//----------------------------------------
-
+	renderer.camera = cameras[iMainCamera];
 	cameras[iMainCamera]->begin(viewMain);
 	cameras[iMainCamera]->setScale(1, -1, 1);
 	//camera->begin();
@@ -818,8 +818,7 @@ void ofApp::undo_pressed()
 
 void ofApp::projection() {
 	camera = &camera_front;
-	renderer.camera = &camera_front;
-
+	renderer.camera = cameras[iMainCamera];
 	camera_position = camera->getPosition();
 	camera_orientation = camera->getOrientationQuat();
 
