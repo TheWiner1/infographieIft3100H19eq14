@@ -10,7 +10,7 @@
 #include "application_Dynamic_Light.h"
 #include "applicationPlus.h"
 #include "draggableVertex.h"
-
+#include "mainRaytrace.h"
 #include "ofxDelaunay.h"
 #include "topoParametrique.h"
 #define N_CAMERAS 3 // AJOUT SASSY 6.3
@@ -32,6 +32,7 @@ public:
 	bool is_key_press_div;
 	bool is_key_press_mul;
 
+	ofAppRT raytracingGui;
 	/*Alex*/
 		Renderer renderer;
 		DraggableVertex draggableVertex;
@@ -131,7 +132,7 @@ public:
 		ofParameter<float> size;
 		ofParameter<int> number;
 		ofParameter<bool> check, check2, checkbox1, rect, point, pixel, ligne, elipse, triangle;;
-		ofParameter<bool> raytracing;
+		
 		
 		ofParameterGroup parameters;
 		ofParameter<ofColor> color;
@@ -188,7 +189,7 @@ public:
 		ofxGuiGroup eclairage, pos_eclairage;
 		ofParameter<bool> ambient, directional, pointli, spotli, pos_amb, pos_geometry,
 		pos_dir, pos_point, pos_spot;  
-
+		ofParameter<bool> raytracing,fermer;
 		ofParameter<bool> eclairageDL, plusplus;
 		ofParameter<float> posX, posXgeo;
 		ofParameter<float> posY, posYgeo;

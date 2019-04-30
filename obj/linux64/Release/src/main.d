@@ -570,6 +570,7 @@ obj/linux64/Release/src/main.o: \
  /home/win/Bureau/of_v0.10.1_linux64gcc6_release/apps/infographieIft3100H19eq14/src/applicationPlus.h \
  /home/win/Bureau/of_v0.10.1_linux64gcc6_release/apps/infographieIft3100H19eq14/src/Imagelist.h \
  /home/win/Bureau/of_v0.10.1_linux64gcc6_release/apps/infographieIft3100H19eq14/src/draggableVertex.h \
+ /home/win/Bureau/of_v0.10.1_linux64gcc6_release/apps/infographieIft3100H19eq14/src/mainRaytrace.h \
  /home/win/Bureau/of_v0.10.1_linux64gcc6_release/apps/infographieIft3100H19eq14/src/ofxDelaunay.h \
  /home/win/Bureau/of_v0.10.1_linux64gcc6_release/apps/infographieIft3100H19eq14/src/Delaunay.h \
  /home/win/Bureau/of_v0.10.1_linux64gcc6_release/apps/infographieIft3100H19eq14/src/topoParametrique.h
@@ -1745,6 +1746,8 @@ obj/linux64/Release/src/main.o: \
 /home/win/Bureau/of_v0.10.1_linux64gcc6_release/apps/infographieIft3100H19eq14/src/Imagelist.h:
 
 /home/win/Bureau/of_v0.10.1_linux64gcc6_release/apps/infographieIft3100H19eq14/src/draggableVertex.h:
+
+/home/win/Bureau/of_v0.10.1_linux64gcc6_release/apps/infographieIft3100H19eq14/src/mainRaytrace.h:
 
 /home/win/Bureau/of_v0.10.1_linux64gcc6_release/apps/infographieIft3100H19eq14/src/ofxDelaunay.h:
 

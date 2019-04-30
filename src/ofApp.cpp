@@ -4,7 +4,7 @@
  
 //--------------------------------------------------------------
 void ofApp::setup() {
-
+	raytracingGui.setup();
 	ofSetWindowTitle("Partie 2: Équipe 14");
 	ofEnableSmoothing();
 
@@ -186,6 +186,11 @@ void ofApp::setup() {
 	plusplus.setName("plus");
 	gui.add(plusplus);
 	ofAppDL.setup();
+
+	//raytrace
+	raytracing.set("Lancer de rayons", false);
+	fermer.set("close", false);
+	gui.add(raytracing);
 	
 	//ofAppPLUS.setup();
 /*/*/
@@ -259,6 +264,7 @@ void ofApp::setup() {
 //--------------------------------------------------------------
 void ofApp::update() {
 	sync.update();
+	raytracingGui.update();
 	nFrames++;
 
 	//RGB
@@ -424,7 +430,12 @@ void ofApp::draw() {
 	ofPopStyle();
 	//---------------------------------------------------------
 
-	gui.draw();
+	
+	if(raytracing){
+		raytracingGui.draw();
+	}//else{
+		gui.draw();
+	//}
 
 	topologieParametrique.draw();
 
