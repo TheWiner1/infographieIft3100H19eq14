@@ -187,6 +187,14 @@ void ofApp::setup() {
 
 	//-----------------------------------------------------
 
+	is_key_press_up = false;
+	is_key_press_down = false;
+	is_key_press_left = false;
+	is_key_press_right = false;
+
+	selected_ctrl_point = 0;
+
+	topologieParametrique.setup();
 }
 
 //--------------------------------------------------------------
@@ -218,6 +226,8 @@ void ofApp::update() {
 	//renderer.updateCamera();
 	time_current = ofGetElapsedTimef();
 	time_elapsed = time_current - time_last;
+	time_last = time_current;
+
 	if (is_camera_perspective)
 	{
 		if (is_camera_fov_narrow)
@@ -241,6 +251,18 @@ void ofApp::update() {
 		}
 	}
 	renderer.updateIllumination();
+
+	if (topologieParametrique.afficher_courbe_parametrique) {
+		if (is_key_press_up)
+			topologieParametrique.selected_ctrl_point->y -= topologieParametrique.speed * time_elapsed;
+		if (is_key_press_down)
+			topologieParametrique.selected_ctrl_point->y += topologieParametrique.speed * time_elapsed;
+		if (is_key_press_left)
+			topologieParametrique.selected_ctrl_point->x -= topologieParametrique.speed * time_elapsed;
+		if (is_key_press_right)
+			topologieParametrique.selected_ctrl_point->x += topologieParametrique.speed * time_elapsed;
+	}
+	topologieParametrique.update();
 }
 
 //--------------------------------------------------------------
@@ -312,6 +334,9 @@ void ofApp::draw() {
 	//---------------------------------------------------------
 
 	gui.draw();
+
+	topologieParametrique.draw();
+
 	gui.setPosition(ofGetWidth() - 250, 0); // AJOUT SASSY
 }
 
@@ -344,6 +369,28 @@ void ofApp::keyPressed(int key) {
 	}
 
 	//-------------------------------------------------------
+
+	switch (key)
+	{
+	case OF_KEY_LEFT: // touche ←
+		is_key_press_left = true;
+		break;
+
+	case OF_KEY_UP: // touche ↑
+		is_key_press_up = true;
+		break;
+
+	case OF_KEY_RIGHT: // touche →
+		is_key_press_right = true;
+		break;
+
+	case OF_KEY_DOWN: // touche ↓
+		is_key_press_down = true;
+		break;
+
+	default:
+		break;
+	}
 }
 
 //--------------------------------------------------------------
@@ -385,6 +432,41 @@ void ofApp::keyReleased(int key) {
 		case 53: // touche 5
 			renderer.shader_active = ShaderType::blinn_phong;
 			ofLog() << "<shader: blinn-phong>";
+			break;
+
+		case OF_KEY_RIGHT_SHIFT:
+			selected_ctrl_point += 1;
+			if (selected_ctrl_point == 6)
+				selected_ctrl_point = 0;
+			topologieParametrique.selected_ctrl_point = &topologieParametrique.ctrl_points[selected_ctrl_point];
+			break;
+
+		case 98: // touche b : reinitialise la position des points de la courbe parametrique. 
+			topologieParametrique.reset();
+			break;
+
+		case 109: // touche m 
+			topologieParametrique.afficher_surface_parametrique = !topologieParametrique.afficher_surface_parametrique;
+			break;
+
+		case 110: // touche n 
+			topologieParametrique.afficher_courbe_parametrique = !topologieParametrique.afficher_courbe_parametrique;
+			break;
+
+		case OF_KEY_LEFT: // touche ←
+			is_key_press_left = false;
+			break;
+
+		case OF_KEY_UP: // touche ↑
+			is_key_press_up = false;
+			break;
+
+		case OF_KEY_RIGHT: // touche →
+			is_key_press_right = false;
+			break;
+
+		case OF_KEY_DOWN: // touche ↓
+			is_key_press_down = false;
 			break;
 
 		default:

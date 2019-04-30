@@ -6,6 +6,7 @@
 #include "renderer.h"
 #include "draggableVertex.h"
 #include "ofxDelaunay.h"
+#include "topoParametrique.h"
 #define N_CAMERAS 3 // AJOUT SASSY 6.3
 
 class ofApp : public ofBaseApp {
@@ -13,6 +14,7 @@ class ofApp : public ofBaseApp {
 public:
 		Renderer renderer;
 		DraggableVertex draggableVertex;
+		TopoParametrique topologieParametrique;
 
 		ofxDelaunay triangulation;//triangularisation
 
@@ -63,6 +65,13 @@ public:
 	float time_last;
 	float time_elapsed;
 	// fin variables  camera
+
+	bool is_key_press_up;
+	bool is_key_press_down;
+	bool is_key_press_left;
+	bool is_key_press_right;
+
+	int selected_ctrl_point;
 
 	void projection();
 
