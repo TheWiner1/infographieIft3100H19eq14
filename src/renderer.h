@@ -9,6 +9,7 @@
 enum class VectorPrimitiveType { none, pixel, point, line, rectangle, ellipse, triangle };
 enum class ModelToDraw { modelOne, modelTwo, modelThree, modelFour, modelFive, modelSix };
 enum class Filtrage { none, grayscale, seuil, lissage, seuilLissage};
+enum class ShaderType { color_fill, lambert, gouraud, phong, blinn_phong };
 
 struct VectorPrimitive
 {
@@ -81,9 +82,20 @@ public:
 	ofxAssimpModelLoader model_one;
 	ofxAssimpModelLoader model_two;
 	ofxAssimpModelLoader model_three;
+/*/*/
 	ofxAssimpModelLoader model_four;
 	ofxAssimpModelLoader model_five;
 	ofxAssimpModelLoader model_six;
+/*/*/
+
+	bool addedModels[3] = { false };
+	int selectedModel = 0;
+	ofxAssimpModelLoader* modelsMirror[3];
+	float mirror_z;
+	//ofxAssimpModelLoader model_one_mirror;
+	//ofxAssimpModelLoader model_two_mirror;
+	//ofxAssimpModelLoader model_three_mirror;
+
 	ModelToDraw model_draw_mode;
 
 	ofLight light;
@@ -96,6 +108,8 @@ public:
 
 	bool model_box;
 	ofVec3f size_box;
+
+	bool model_mirror;
 
 	int w_texture, h_texture;
 	ofTexture	texGray;
@@ -121,7 +135,94 @@ public:
 
 	stack<VectorPrimitive> primitiveStack;
 
+	/*Variables de l'illumination*/
+	ShaderType shader_active;
+	ofShader shader_color_fill;
+	ofShader shader_lambert;
+	ofShader shader_gouraud;
+	ofShader shader_phong;
+	ofShader shader_blinn_phong;
+
+	ofShader* shader;
+	string shader_name;
+
+	float oscillation_frequency;
+	float oscillation_amplitude;
+	
+	float oscillate(float time, float frequency, float amplitude);
+
+	void updateIllumination();
+	//*fin variables illumination
+
+	//variables camera;
+
+	/*Alex begin*/
+
+	ofPlanePrimitive v_plane;
+	ofMaterial material_v_plane;
+
+	float speed_delta;
+	float speed_translation;
+	float speed_rotation;
+
+	bool is_camera_move_left;
+	bool is_camera_move_right;
+	bool is_camera_move_up;
+	bool is_camera_move_down;
+	bool is_camera_move_forward;
+	bool is_camera_move_backward;
+	bool is_camera_roll_left;
+	bool is_camera_roll_right;
+	bool is_camera_pan_left;
+	bool is_camera_pan_right;
+	bool is_camera_look_at;
+
+
+	ofMaterial model_material[3];
+	ofMaterial material_0;
+	ofMaterial material_1;
+	ofMaterial material_2;
+	ofMaterial material_3;
+	ofMaterial material_4;
+	ofMaterial material_current;
+
+	ofVec3f  camera_dir;
+	float camera_to_mirror_angle;
+	/*Alex end*/
+	/*Camera*/
+	ofCamera* camera;
+
+	ofCamera camera_front;
+
+	bool is_camera_perspective;
+
+	ofQuaternion camera_orientation;
+
+	ofVec3f camera_position;
+	ofVec3f camera_target;
+
+	string camera_name;
+	string camera_projection;
+
+	float camera_near;
+	float camera_far;
+
+	float camera_fov;
+	float camera_fov_delta;
+
+	bool is_camera_fov_narrow;
+	bool is_camera_fov_wide;
+
+	float time_current;
+	float time_last;
+	float time_elapsed;
+	//fin variables  camera
+
 	void setup();
+	//void setupCamera();
+	void setupIllumination();
+	void updateCamera();
+	//void projection();
 	void update();
 	void draw();
 	void reset();

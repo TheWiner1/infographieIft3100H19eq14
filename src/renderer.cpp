@@ -1,5 +1,19 @@
 #include "renderer.h"
 
+/*void Renderer::setupCamera() {
+	ofEnableDepthTest();
+	
+	camera_near = 50.0f;
+	camera_far = 1550.0f;
+
+	camera_fov = 60.0f;
+	camera_fov_delta = 16.0f;
+
+	camera_front.setPosition(ofGetWidth() / 2.0f, ofGetHeight() / 2.0f, 300.0f);
+
+	projection();
+}*/
+
 void Renderer::setup()
 {
 	ofSetFrameRate(60);
@@ -89,17 +103,92 @@ void Renderer::setup()
 	}
 
 	// 4.3 Modeles 3D setup.
-	ofEnableLighting();
+	/*ofEnableLighting();
 
 	light.setDiffuseColor(ofColor(255, 255, 255));
 	light.setPosition(0.0f, 0.0f, 1000.0f);
-	light.enable();
-
+	light.enable();^^^^^^^%&^^6??????????????
+	*/
 	model_count = 3;
+	
+	/*model_one.loadModel("Car.obj");
+	model_two.loadModel("Wolf.obj");
+	model_three.loadModel("Deer.obj");//jires .disableMaterials();
+
+	models[0] = &model_one;
+	models[1] = &model_two;
+	models[2] = &model_three;
+
+	//Invisible tant qu'on les appelles pas.
+	models[0]->setScale(0.0f, 0.0f, 0.0f);
+	models[1]->setScale(0.0f, 0.0f, 0.0f);
+	models[2]->setScale(0.0f, 0.0f, 0.0f);*/
+
+	// Filtrage
+	filtrage = Filtrage::none;
+
+	/*Alex*/
+	speed_delta = 100.0f;
+	is_camera_perspective = true;
+	//default
+	material_0.setAmbientColor(ofFloatColor(0.1f, 0.1f, 0.1f));
+	material_0.setDiffuseColor(ofFloatColor(0.6f, 0.6f, 0.6f));
+	material_0.setSpecularColor(ofFloatColor(1.0f, 1.0f, 0.0f));
+	material_0.setShininess(0.6f);
+	//emerald
+	material_1.setAmbientColor(ofFloatColor(0.0215f, 0.1745f, 0.0215f));
+	material_1.setDiffuseColor(ofFloatColor(0.07568f, 0.61424f, 0.07568f));
+	material_1.setSpecularColor(ofFloatColor(0.633f, 0.727811f, 0.633f));
+	material_1.setShininess(0.6f);
+
+	//ruby
+	material_2.setAmbientColor(ofFloatColor(0.1745f, 0.01175f, 0.01175f));
+	material_2.setDiffuseColor(ofFloatColor(0.61424f, 0.04136f, 0.04136f));
+	material_2.setSpecularColor(ofFloatColor(0.727811f, 0.626959f, 0.626959f));
+	material_2.setShininess(0.6f);
+	// silver
+	material_3.setAmbientColor(ofFloatColor(0.19225f, 0.19225f, 0.19225f));
+	material_3.setDiffuseColor(ofFloatColor(0.50754f, 0.50754f, 0.50754f));
+	material_3.setSpecularColor(ofFloatColor(0.508273f, 0.508273f, 0.508273f));
+	material_3.setShininess(0.4f);
+	// gold
+	material_4.setAmbientColor(ofFloatColor(0.24725f, 0.1995f, 0.0745f));
+	material_4.setDiffuseColor(ofFloatColor(0.75164f, 0.60648f, 0.22648f));
+	material_4.setSpecularColor(ofFloatColor(0.628281f, 0.555802f, 0.366065f));
+	material_4.setShininess(0.4f);
+
+	material_current = material_0;
+
+	mirror_z = -900.0f;
+	v_plane.setPosition(ofGetWidth() / 2.0f, ofGetHeight() / 2.0f, mirror_z);
+	v_plane.set(100000, 2000);
+	v_plane.setResolution(20, 20);
+	v_plane.rotate(0, 1, 0, 0);
+
+	material_v_plane.setDiffuseColor(ofColor::aliceBlue);
+	material_v_plane.setShininess(0.8);
+	ofEnableAlphaBlending();
+
+
+	/*Alex*/
+}
+
+void Renderer::setupIllumination() {
+	//ofEnableDepthTest();
+	ofSetLogLevel(OF_LOG_VERBOSE);
+
+	// paramètres
+	oscillation_amplitude = 42.0f;//32
+	oscillation_frequency = 7500.0f;
 
 	model_one.loadModel("Car.obj");
 	model_two.loadModel("Wolf.obj");
 	model_three.loadModel("Deer.obj");
+
+	// désactiver le matériau par défaut du modèle
+	model_one.disableMaterials();
+	model_two.disableMaterials();
+	model_three.disableMaterials();//jires modif djr
 
 	models[0] = &model_one;
 	models[1] = &model_two;
@@ -110,8 +199,51 @@ void Renderer::setup()
 	models[1]->setScale(0.0f, 0.0f, 0.0f);
 	models[2]->setScale(0.0f, 0.0f, 0.0f);
 
-	// Filtrage
-	filtrage = Filtrage::none;
+	/*Alex*/
+	//Mirror
+
+	model_one_mirror.loadModel("Car.obj");
+	model_two_mirror.loadModel("Wolf.obj");
+	model_three_mirror.loadModel("Deer.obj");
+
+	// désactiver le matériau par défaut du modèle
+	model_one_mirror.disableMaterials();
+	model_two_mirror.disableMaterials();
+	model_three_mirror.disableMaterials();
+
+	modelsMirror[0] = &model_one_mirror;
+	modelsMirror[1] = &model_two_mirror;
+	modelsMirror[2] = &model_three_mirror;
+
+	//Invisible tant qu'on les appelles pas.
+	modelsMirror[0]->setScale(0.0f, 0.0f, 0.0f);
+	modelsMirror[1]->setScale(0.0f, 0.0f, 0.0f);
+	modelsMirror[2]->setScale(0.0f, 0.0f, 0.0f);
+
+	/*Alex End*/
+	// charger, compiler et linker les sources des shaders
+	shader_color_fill.load(
+		"shader/color_fill_330_vs.glsl",
+		"shader/color_fill_330_fs.glsl");
+
+	shader_lambert.load(
+		"shader/lambert_330_vs.glsl",
+		"shader/lambert_330_fs.glsl");
+
+	shader_gouraud.load(
+		"shader/gouraud_330_vs.glsl",
+		"shader/gouraud_330_fs.glsl");
+
+	shader_phong.load(
+		"shader/phong_330_vs.glsl",
+		"shader/phong_330_fs.glsl");
+
+	shader_blinn_phong.load(
+		"shader/blinn_phong_330_vs.glsl",
+		"shader/blinn_phong_330_fs.glsl");
+
+	// shader actif au lancement de la scène
+	shader_active = ShaderType::blinn_phong;
 }
 
 void Renderer::update()
@@ -124,11 +256,182 @@ void Renderer::update()
 		}
 		texGray.loadData(grayPixels.getData(), w_texture, h_texture, GL_LUMINANCE);
 	}
+
+	camera_position = camera->getGlobalPosition();
+	camera_to_mirror_angle = camera_position.angle(ofVec3f(1, 0, 0).normalize());
+
+	modelsMirror[0]->setRotation(1.0f, +camera_to_mirror_angle/2, 0.0f, 1.0f, 0.0f);
+	modelsMirror[1]->setRotation(1.0f, 180 - camera_to_mirror_angle / 2, 0.0f, 1.0f, 0.0f);
+	modelsMirror[2]->setRotation(1.0f, 180 - camera_to_mirror_angle / 2, 0.0f, 1.0f, 0.0f);
+}
+
+void Renderer::updateIllumination()
+{
+	// transformer la lumière
+	light.setGlobalPosition(
+		ofMap(ofGetMouseX() / (float)ofGetWidth(), 0.0f, 1.0f, -ofGetWidth() / 2.0f, ofGetWidth() / 2.0f),
+		ofMap(ofGetMouseY() / (float)ofGetHeight(), 0.0f, 1.0f, -ofGetHeight() / 2.0f, ofGetHeight() / 2.0f),
+		-100.0f * 1.5f);//100 = offset_z
+
+	// mise à jour d'une valeur numérique animée par un oscillateur
+	float oscillation = oscillate(ofGetElapsedTimeMillis(), oscillation_frequency, oscillation_amplitude) + oscillation_amplitude;
+
+	// passer les attributs uniformes au shader de sommets
+	switch (shader_active)
+	{
+	case ShaderType::color_fill:
+		shader_name = "Color Fill";
+		shader = &shader_color_fill;
+		shader->begin();
+		shader->setUniform3f("color", glm::vec3(material_current.getAmbientColor().r, material_current.getAmbientColor().g, 0.0f)); /*Alex*/
+		shader->end();
+		break;
+
+	case ShaderType::lambert:
+		shader_name = "Lambert";
+		shader = &shader_lambert;
+		shader->begin();
+		shader->setUniform3f("color_ambient", glm::vec3(material_current.getAmbientColor().r, material_current.getAmbientColor().g, material_current.getAmbientColor().b)); 
+		shader->setUniform3f("color_diffuse", glm::vec3(material_current.getDiffuseColor().r, material_current.getDiffuseColor().g, material_current.getDiffuseColor().b));
+		shader->setUniform3f("light_position", glm::vec4(light.getGlobalPosition(), 0.0f) * ofGetCurrentMatrix(OF_MATRIX_MODELVIEW));
+		shader->end();
+		break;
+
+	case ShaderType::gouraud:
+		shader_name = "Gouraud";
+		shader = &shader_gouraud;
+		shader->begin();
+		shader->setUniform3f("color_ambient", glm::vec3(material_current.getAmbientColor().r, material_current.getAmbientColor().g, material_current.getAmbientColor().b));
+		shader->setUniform3f("color_diffuse", glm::vec3(material_current.getDiffuseColor().r, material_current.getDiffuseColor().g, material_current.getDiffuseColor().b));
+		shader->setUniform3f("color_specular", glm::vec3(material_current.getSpecularColor().r, material_current.getSpecularColor().g, material_current.getSpecularColor().b));
+		shader->setUniform1f("brightness", oscillation);
+		shader->setUniform3f("light_position", glm::vec4(light.getGlobalPosition(), 0.0f) * ofGetCurrentMatrix(OF_MATRIX_MODELVIEW));
+		shader->end();
+		break;
+
+	case ShaderType::phong:
+		shader_name = "Phong";
+		shader = &shader_phong;
+		shader->begin();
+		shader->setUniform3f("color_ambient", glm::vec3(material_current.getAmbientColor().r, material_current.getAmbientColor().g, material_current.getAmbientColor().b));
+		shader->setUniform3f("color_diffuse", glm::vec3(material_current.getDiffuseColor().r, material_current.getDiffuseColor().g, material_current.getDiffuseColor().b));
+		shader->setUniform3f("color_specular", glm::vec3(material_current.getSpecularColor().r, material_current.getSpecularColor().g, material_current.getSpecularColor().b));
+		shader->setUniform1f("brightness", oscillation);
+		shader->setUniform3f("light_position", glm::vec4(light.getGlobalPosition(), 0.0f) * ofGetCurrentMatrix(OF_MATRIX_MODELVIEW));
+		shader->end();
+		break;
+
+	case ShaderType::blinn_phong:
+		shader_name = "Blinn-Phong";
+		shader = &shader_blinn_phong;
+		shader->begin();
+		shader->setUniform3f("color_ambient", glm::vec3(material_current.getAmbientColor().r, material_current.getAmbientColor().g, material_current.getAmbientColor().b));
+		shader->setUniform3f("color_diffuse", glm::vec3(material_current.getDiffuseColor().r, material_current.getDiffuseColor().g, material_current.getDiffuseColor().b));
+		shader->setUniform3f("color_specular", glm::vec3(material_current.getSpecularColor().r, material_current.getSpecularColor().g, material_current.getSpecularColor().b));
+		shader->setUniform1f("brightness", oscillation);
+		shader->setUniform3f("light_position", glm::vec4(light.getGlobalPosition(), 0.0f) * ofGetCurrentMatrix(OF_MATRIX_MODELVIEW));
+		shader->end();
+		break;
+
+	default:
+		break;
+	}
+}
+
+void Renderer::updateCamera() {
+
+	/*Alex*/
+	time_current = ofGetElapsedTimef();
+	time_elapsed = time_current - time_last;
+	time_last = time_current;
+
+	speed_translation = speed_delta * time_elapsed;
+	speed_rotation = speed_translation / 8.0f;
+
+
+	if (is_camera_move_left)
+		camera->truck(-speed_translation);
+	if (is_camera_move_right)
+		camera->truck(speed_translation);
+
+	if (is_camera_move_up)
+		camera->boom(speed_translation);
+	if (is_camera_move_down)
+		camera->boom(-speed_translation);
+
+	if (is_camera_move_forward)
+	{
+		camera->dolly(-speed_translation * 2.0f);
+	}
+	if (is_camera_move_backward)
+		camera->dolly(speed_translation * 5.0f);
+
+	if (is_camera_roll_left)
+		camera->rollDeg(-speed_rotation);
+	if (is_camera_roll_right)
+		camera->rollDeg(speed_rotation);
+
+	if (is_camera_pan_left)
+		camera->panDeg(speed_rotation);
+	if (is_camera_pan_right)
+		camera->panDeg(-speed_rotation); 
+	if (is_camera_look_at)
+	{
+		if (selectedModel == 0)
+		{
+			if (addedModels[0] == true && addedModels[1] == true && addedModels[1] == true)
+			{
+				camera->lookAt((modelsMirror[0]->getPosition() + modelsMirror[1]->getPosition() + modelsMirror[2]->getPosition()) / 3.0f);
+			}
+			else
+			{
+				//camera->lookAt(ofVec3f(ofGetWidth() / 2.0f, ofGetHeight() / 2.0f, 0.0f));
+				camera->lookAt(ofVec3f(0, 0, 0));
+			}
+		}
+		else
+		{
+			for (int index = 0; index < model_count; ++index)
+			{
+				if (addedModels[index] && selectedModel == index + 1)
+				{
+					camera->lookAt(modelsMirror[index]->getPosition());
+				}
+			}
+		}
+	}
+	else
+	{
+		//camera->lookAt(ofVec3f(ofGetWidth() / 2.0f, ofGetHeight() / 2.0f, 0.0f));
+		//camera->lookAt(v_plane.getPosition());
+	}
+
+	/*Alex*/
+	time_current = ofGetElapsedTimef();
+	time_elapsed = time_current - time_last;
+	if (is_camera_perspective)
+	{
+		if (is_camera_fov_narrow)
+		{
+			camera_fov = std::max(camera_fov -= camera_fov_delta * time_elapsed, 0.0f);
+			camera->setFov(camera_fov);
+		}
+
+		if (is_camera_fov_wide)
+		{
+			camera_fov = std::min(camera_fov += camera_fov_delta * time_elapsed, 180.0f);
+			camera->setFov(camera_fov);
+		}
+	}
 }
 
 void Renderer::draw()
 {
-//	ofSetBackgroundColor(background_color);
+	// activer la caméra
+	camera->begin();
+
+	ofSetBackgroundColor(background_color);*/
+
 
 	// Dessin d'une image importee.
 	ofSetColor(255);
@@ -343,13 +646,38 @@ void Renderer::draw()
 			mouse_current_x,
 			mouse_current_y);
 	}
+//===============================================ilumunation ============================================
+	// activer l'éclairage dynamique
+	ofEnableLighting();
+
+	// activer la lumière dynamique
+	light.enable();
 
 	// Dessine les modeles 3D.
 	ofPushMatrix();
+	/*Alex*/
+
 	for (int index = 0; index < model_count; ++index) {
+		material_current = model_material[index];
+		updateIllumination();
 		ofEnableDepthTest();
-		models[index]->draw(OF_MESH_FILL);
-		ofDisableDepthTest();
+		
+		// activer le shader
+		shader->begin();
+
+		models[index]->draw(OF_MESH_FILL);//djr modiif
+
+		if (model_mirror) {
+			ofMaterial mat = material_current;
+			mat.setDiffuseColor(mat.getDiffuseColor() + 0.15f*ofFloatColor(ofColor::aliceBlue));
+			updateIllumination();
+			mat.begin();
+			modelsMirror[index]->draw(OF_MESH_FILL);
+			mat.end();
+			material_v_plane.begin(); //mirroir
+			v_plane.draw();
+			material_v_plane.end();
+		}
 
 		if (model_box) {
 			ofPushMatrix();
@@ -365,8 +693,24 @@ void Renderer::draw()
 	}
 	ofPopMatrix();
 
+	// désactiver le shader
+	shader->end();
+
+	// désactiver la lumière
+	light.disable();
+
+	// désactiver l'éclairage
+	ofDisableDepthTest();
+//=============================================fin illumination====================================================
 	// Dessine les curseurs dynamiques.
 	draw_cursor(mouse_current_x, mouse_current_y);
+
+	ofPopMatrix();
+
+	// désactiver le shader
+	shader->end();
+
+	camera->end();
 }
 
 // Fonction qui defini le remplissage de la figure.
@@ -376,6 +720,12 @@ void Renderer::remplissage()
 		ofFill();
 	else
 		ofNoFill();
+}
+
+// fonction d'oscillation
+float Renderer::oscillate(float time, float frequency, float amplitude)
+{
+	return sinf(time * 3.0f * PI / frequency) * amplitude;//2
 }
 
 // Fonction qui dessine le curseur dynamique.
@@ -576,6 +926,7 @@ void Renderer::toneMap() {
 
 // Fonction qui ajoute un modele 3D.
 void Renderer::add_3d_model(ModelToDraw model) {
+
 	vector_position.x = mouse_current_x;
 	vector_position.y = mouse_current_y;
 	vector_position.z = 0.0f;
@@ -592,18 +943,43 @@ void Renderer::add_3d_model(ModelToDraw model) {
 		models[0]->setPosition(vector_position.x, vector_position.y, vector_position.z);
 		models[0]->setRotation(0.0f, 180.0f, 0.0f, 1.0f, 0.0f);
 		models[0]->setScale(vector_proportion.x, vector_proportion.y, vector_proportion.z);
+
+		modelsMirror[0]->setPosition(vector_position.x, vector_position.y, vector_position.z/1.5 + mirror_z/1.5);
+		//modelsMirror[0]->setRotation(0.0f, 180.0f, 0.0f, 0.0f, 1.0f);
+		modelsMirror[0]->setRotation(1.0f, +camera_to_mirror_angle / 2, 0.0f, 1.0f, 0.0f);
+		modelsMirror[0]->setScale(vector_proportion.x, vector_proportion.y, vector_proportion.z);
+		addedModels[0] = true;
 		break;
 	case ModelToDraw::modelTwo:
 		models[1]->setPosition(vector_position.x, vector_position.y, vector_position.z);
 		models[1]->setScale(vector_proportion.x, vector_proportion.y, vector_proportion.z);
+		//models[1]->setRotation(0.0f, 180.0f, 0.0f, 0.0f, 1.0f);
+
+		camera_position = camera->getGlobalPosition();
+		camera_to_mirror_angle = camera_position.angle(ofVec3f(0,1,0));
+		modelsMirror[1]->setPosition(vector_position.x, vector_position.y, vector_position.z / 1.5 + mirror_z/1.5);
+		modelsMirror[1]->setScale(vector_proportion.x, vector_proportion.y, vector_proportion.z);
+		//modelsMirror[1]->setRotation(0.0f, 180.0f, 0.0f, 0.0f, 1.0f);
+		modelsMirror[1]->setRotation(1.0f, 180-camera_to_mirror_angle/2, 0.0f, 1.0f, 0.0f);
+
+		addedModels[1] = true;
 		break;
 	case ModelToDraw::modelThree:
 		models[2]->setPosition(vector_position.x, vector_position.y, vector_position.z);
 		models[2]->setScale(vector_proportion.x, vector_proportion.y, vector_proportion.z);
+		//models[2]->setRotation(0.0f, 180.0f, 0.0f, 0.0f, 1.0f);
+
+		modelsMirror[2]->setPosition(vector_position.x, vector_position.y, vector_position.z / 1.5 + mirror_z/1.5 );
+		modelsMirror[2]->setScale(vector_proportion.x, vector_proportion.y, vector_proportion.z);
+		//modelsMirror[2]->setRotation(0.0f, 180.0f, 0.0f, 0.0f, 1.0f);
+		modelsMirror[2]->setRotation(1.0f, 180 - camera_to_mirror_angle / 2, 0.0f, 1.0f, 0.0f);
+
+		addedModels[2] = true;
 		break;
 	default:
 		break;
 	}
+
 }
 
 // Fonction qui efface les modeles 3D.
@@ -611,6 +987,14 @@ void Renderer::model_reset() {
 	models[0]->setScale(0.0f, 0.0f, 0.0f);
 	models[1]->setScale(0.0f, 0.0f, 0.0f);
 	models[2]->setScale(0.0f, 0.0f, 0.0f);
+
+
+	modelsMirror[0]->setScale(0.0f, 0.0f, 0.0f);
+	modelsMirror[1]->setScale(0.0f, 0.0f, 0.0f);
+	modelsMirror[2]->setScale(0.0f, 0.0f, 0.0f);
+	addedModels[0] = false;
+	addedModels[1] = false;
+	addedModels[2] = false;
 }
 
 // Fonction qui retourne la grandeur de la boite de delimitation d'un modele.
@@ -663,11 +1047,32 @@ void Renderer::redo()
 	}
 }
 
+/*void Renderer::projection() {
+	camera = &camera_front;
+	camera_position = camera->getPosition();
+	camera_orientation = camera->getOrientationQuat();
+
+	// mode de projection de la caméra
+	if (is_camera_perspective)
+	{
+		camera->disableOrtho();
+		camera->setupPerspective(false, camera_fov, camera_near, camera_far, ofVec2f(0, 0));
+		camera_projection = "perspective";
+	}
+	else
+	{
+		camera->enableOrtho();
+		camera_projection = "orthogonale";
+	}
+
+	camera->setPosition(camera_position);
+	camera->setOrientation(camera_orientation);
+}*/
+
 Renderer::~Renderer()
 {
 	std::free(shapes);
 }
-
 
 
 
@@ -750,3 +1155,4 @@ void Renderer::deselectAll(){
   for (index = 0; index < shapeCount; ++index)
     shapes[index].isSelected = false;
 }
+
