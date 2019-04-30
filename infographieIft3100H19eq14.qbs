@@ -12,6 +12,8 @@ Project{
         name: { return FileInfo.baseName(sourceDirectory) }
 
         files: [
+            'src/Delaunay.cpp',
+            'src/Delaunay.h',
             'src/Imagelist.cpp',
             'src/Imagelist.h',
             'src/applicationPlus.cpp',
@@ -24,12 +26,16 @@ Project{
             'src/main_Dynamic_Light.cpp',
             'src/ofApp.cpp',
             'src/ofApp.h',
+            'src/ofxDelaunay.cpp',
+            'src/ofxDelaunay.h',
             'src/renderer.cpp',
             'src/renderer.h',
             'src/rendererPlus.cpp',
             'src/rendererPlus.h',
             'src/renderer_Dynamic_Light.cpp',
             'src/renderer_Dynamic_Light.h',
+            'src/topoParametrique.cpp',
+            'src/topoParametrique.h',
         ]
 
         of.addons: [

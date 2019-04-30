@@ -430,7 +430,7 @@ void Renderer::draw()
 	// activer la caméra
 	camera->begin();
 
-	ofSetBackgroundColor(background_color);*/
+	ofSetBackgroundColor(background_color);
 
 
 	// Dessin d'une image importee.
