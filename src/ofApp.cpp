@@ -96,12 +96,20 @@ void ofApp::setup() {
 	geometry_group.setup("Modeles 3D");
 	geometry_group.add(model_one.set("Voiture", false));
 	model_one_listener = model_one.newListener([this](bool&) {onChangeGeometryGroup(model_one.getName(), model_one.get()); });
+	geometry_group.add(model_one_material.setup("Matériau voiture",2,0,4));
+	model_one_listener = model_one.newListener([this](bool&) {onChangeGeometryGroup(model_one.getName(), model_one.get()); });
+
 	geometry_group.add(model_two.set("Loup", false));
 	model_two_listener = model_two.newListener([this](bool&) {onChangeGeometryGroup(model_two.getName(), model_two.get()); });
+	geometry_group.add(model_two_material.setup("Matériau loup", 0, 0, 4));
+
 	geometry_group.add(model_three.set("Cerf", false));
 	model_three_listener = model_three.newListener([this](bool&) {onChangeGeometryGroup(model_three.getName(), model_three.get()); });
+	geometry_group.add(model_three_material.setup("Matériau cerf", 4, 0, 4));
 
 	gui.add(&geometry_group);
+	gui.add(model_lookAt.set("Regarder vers", false));
+	gui.add(model_mirror.set("Mirroir modeles", false));
 	model_reset.setup("Effacer modeles");
 	model_reset.addListener(this, &ofApp::model_reset_pressed);
 	gui.add(&model_reset);
@@ -170,6 +178,7 @@ void ofApp::setup() {
 	camLeft.panDeg(-90);
 	
 	cameras[0] = &camera_front;
+	renderer.camera = &camera_front;
 	cameras[1] = &camTop;
 	cameras[2] = &camLeft;
 
@@ -223,7 +232,8 @@ void ofApp::update() {
 
 	renderer.model_box = model_box;
 	renderer.update();
-	//renderer.updateCamera();
+	renderer.updateCamera();
+	update_materials(); // Alex
 	time_current = ofGetElapsedTimef();
 	time_elapsed = time_current - time_last;
 	time_last = time_current;
@@ -250,7 +260,27 @@ void ofApp::update() {
 			}
 		}
 	}
-	renderer.updateIllumination();
+	renderer.updateIllumination();	
+		/*Alex TODO if avec camera*/
+	renderer.is_camera_move_forward = is_key_press_plus;
+	renderer.is_camera_move_backward = is_key_press_minus;
+	if (!topologieParametrique.afficher_courbe_parametrique) //Alex
+	{
+		renderer.is_camera_move_left = is_key_press_left;
+		renderer.is_camera_move_right = is_key_press_right;
+
+		renderer.is_camera_move_up = is_key_press_up;
+		renderer.is_camera_move_down = is_key_press_down;
+	}
+	renderer.is_camera_roll_left = is_key_press_eight;
+	renderer.is_camera_roll_right = is_key_press_nine;
+
+
+	renderer.is_camera_pan_left = is_key_press_div;
+	renderer.is_camera_pan_right = is_key_press_mul;
+
+	renderer.is_camera_look_at = model_lookAt;
+	renderer.model_mirror = model_mirror;
 
 	if (topologieParametrique.afficher_courbe_parametrique) {
 		if (is_key_press_up)
@@ -388,6 +418,34 @@ void ofApp::keyPressed(int key) {
 		is_key_press_down = true;
 		break;
 
+	case '+': // touche +
+		is_key_press_plus = true;
+		break;
+
+	case '-': // touche -
+		is_key_press_minus = true;
+		break;
+
+	case '/': // touche /
+		is_key_press_div = true;
+		break;
+
+	case '*': // touche -
+		is_key_press_mul = true;
+		break;
+
+	case '7': // touche 7
+		is_key_press_seven = true;
+		break;
+
+	case '8': // touche 8
+		is_key_press_eight = true;
+		break;
+
+	case '9': // touche 9
+		is_key_press_nine = true;
+		break;
+
 	default:
 		break;
 	}
@@ -452,6 +510,22 @@ void ofApp::keyReleased(int key) {
 		case 110: // touche n 
 			topologieParametrique.afficher_courbe_parametrique = !topologieParametrique.afficher_courbe_parametrique;
 			break;
+/*Alex*/
+		case 56: // touche 8
+			is_key_press_eight = false;
+			break;
+
+		case 57: // touche 9
+			is_key_press_nine = false;
+			break;
+
+		case '/': // touche /
+			is_key_press_div = false;
+			break;
+
+		case '*': // touche -
+			is_key_press_mul = false;
+			break;
 
 		case OF_KEY_LEFT: // touche ←
 			is_key_press_left = false;
@@ -469,6 +543,14 @@ void ofApp::keyReleased(int key) {
 			is_key_press_down = false;
 			break;
 
+		case '+': // touche +
+			is_key_press_plus = false;
+			break;
+
+		case '-': // touche -
+			is_key_press_minus = false;
+			break;
+/*Alex*/
 		default:
 			break;
 	}
@@ -663,11 +745,13 @@ void ofApp::tonemapping_pressed()
 }
 
 void ofApp::onChangeGeometryGroup(string name, bool value) {
+	renderer.selectedModel = 0;
 	if (name == "Voiture") {
 		if (value) {
 			model_two.set(false);
 			model_three.set(false);
 			renderer.model_draw_mode = ModelToDraw::modelOne;
+			renderer.selectedModel = 1;
 		}
 	}
 	else if (name == "Loup") {
@@ -675,6 +759,7 @@ void ofApp::onChangeGeometryGroup(string name, bool value) {
 			model_one.set(false);
 			model_three.set(false);
 			renderer.model_draw_mode = ModelToDraw::modelTwo;
+			renderer.selectedModel = 2;
 		}
 	}
 	else if (name == "Cerf") {
@@ -682,6 +767,8 @@ void ofApp::onChangeGeometryGroup(string name, bool value) {
 			model_one.set(false);
 			model_two.set(false);
 			renderer.model_draw_mode = ModelToDraw::modelThree;
+			renderer.selectedModel = 3;
+
 		}
 	}
 }
@@ -731,6 +818,7 @@ void ofApp::undo_pressed()
 
 void ofApp::projection() {
 	camera = &camera_front;
+	renderer.camera = &camera_front;
 
 	camera_position = camera->getPosition();
 	camera_orientation = camera->getOrientationQuat();
@@ -802,4 +890,63 @@ void ofApp::drawScene(int cameraIndex) {
 		recFrames = 0;
 	}
 
+}
+
+void ofApp::update_materials()
+{
+	switch (model_one_material)
+	{
+	case 1:
+		renderer.model_material[0] = renderer.material_1;
+		break;
+	case 2:
+		renderer.model_material[0] = renderer.material_2;
+		break;
+	case 3:
+		renderer.model_material[0] = renderer.material_3;
+		break;
+	case 4:
+		renderer.model_material[0] = renderer.material_4;
+		break;
+	default:
+		renderer.model_material[0] = renderer.material_0;
+		break;
+	}
+
+	switch (model_two_material)
+	{
+	case 1:
+		renderer.model_material[1] = renderer.material_1;
+		break;
+	case 2:
+		renderer.model_material[1] = renderer.material_2;
+		break;
+	case 3:
+		renderer.model_material[1] = renderer.material_3;
+		break;
+	case 4:
+		renderer.model_material[1] = renderer.material_4;
+		break;
+	default:
+		renderer.model_material[1] = renderer.material_0;
+		break;
+	}
+	switch (model_three_material)
+	{
+	case 1:
+		renderer.model_material[2] = renderer.material_1;
+		break;
+	case 2:
+		renderer.model_material[2] = renderer.material_2;
+		break;
+	case 3:
+		renderer.model_material[2] = renderer.material_3;
+		break;
+	case 4:
+		renderer.model_material[2] = renderer.material_4;
+		break;
+	default:
+		renderer.model_material[2] = renderer.material_0;
+		break;
+	}
 }
