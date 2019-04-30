@@ -430,7 +430,8 @@ void Renderer::draw()
 	// activer la caméra
 	camera->begin();
 
-	ofSetBackgroundColor(background_color);
+	ofSetBackgroundColor(background_color);*/
+
 
 	// Dessin d'une image importee.
 	ofSetColor(255);
@@ -784,6 +785,8 @@ void Renderer::draw_cursor(float x, float y) const
 // Fonction qui vide le tableau de primitives vectorielles.
 void Renderer::reset()
 {
+	//rendererDynamicLight::reset();
+	//Renderer::reset();
 	for (index = 0; index < shapeCount; ++index)
 		shapes[index].type = VectorPrimitiveType::none;
 
@@ -927,7 +930,9 @@ void Renderer::add_3d_model(ModelToDraw model) {
 	vector_position.x = mouse_current_x;
 	vector_position.y = mouse_current_y;
 	vector_position.z = 0.0f;
-
+	//vector_position.x = geox;
+	//vector_position.y = geoy;
+	//vector_position.z = geoz;
 	vector_proportion.x = 0.5f;
 	vector_proportion.y = 0.5f;
 	vector_proportion.z = 0.5f;
@@ -1068,3 +1073,86 @@ Renderer::~Renderer()
 {
 	std::free(shapes);
 }
+
+
+
+
+
+
+
+void Renderer::select_shapes(int x, int y){
+
+  for(int i=0; i<shapeCount;++i){
+
+      bool z = ((x > shapes[i].position1[0] & x < shapes[i].position2[0]) or
+          (x < shapes[i].position1[0] & x > shapes[i].position2[0])) &
+
+          ((y > shapes[i].position1[1] & y < shapes[i].position2[1]) or
+           (y < shapes[i].position1[1] & y > shapes[i].position2[1]));
+      /*
+      bool a,b,c,d;
+      a = (x >= shapes[i].position1[0] & x <= shapes[i].position2[0]) &
+          (y >= shapes[i].position1[1] & y <= shapes[i].position2[1]);
+
+      b = (x >= shapes[i].position1[0] & x <= shapes[i].position2[0]) &
+          (y <= shapes[i].position1[1] & y >= shapes[i].position2[1]);
+      c = (x <= shapes[i].position1[0] & x >= shapes[i].position2[0]) &
+          (y >= shapes[i].position1[1] & y <= shapes[i].position2[1]) ;
+      d = (x <= shapes[i].position1[0] & x >= shapes[i].position2[0]) &
+          (y <= shapes[i].position1[1] & y >= shapes[i].position2[1]);*/
+
+      if(z){
+          shapes[i].isSelected = !shapes[i].isSelected;
+
+          if(shapes[i].isSelected){
+            int stroke_color_r = (int) 255;//ofRandom(0, 256);
+            int stroke_color_g = (int) 0;//ofRandom(0, 256);
+            int stroke_color_b = (int) 0;//ofRandom(0, 256);
+            int stroke_color_a = 255;
+            shapes[head].stroke_color[0] = stroke_color_r;
+            shapes[head].stroke_color[1] = stroke_color_g;
+            shapes[head].stroke_color[2] = stroke_color_b;
+            shapes[head].stroke_color[3] = stroke_color_a;
+            ofLog() <<"shape "<< i <<" selected";
+          }
+          else
+            ofLog() <<"shape "<< i <<" deselected";
+
+        }
+    }
+}
+
+void Renderer::move_shapes(int x, int y){
+   float tx, ty;
+   for(int i=0; i<shapeCount;++i){
+      if(shapes[i].isSelected){
+
+          tx = x - (shapes[i].position1[0]+shapes[i].position2[0])/2;
+          ty = y - (shapes[i].position1[1]+shapes[i].position2[1])/2;
+              shapes[i].position1[0] += tx;
+               shapes[i].position1[1] += ty;
+               shapes[i].position2[0] += tx;
+               shapes[i].position2[1] += ty;
+         
+      }
+    }
+ }
+
+void Renderer::delete_selected_shapes(){
+  for (index = 0; index < shapeCount; ++index){
+      if(shapes[index].isSelected)
+        shapes[index].type = VectorPrimitiveType::none;
+      //head-=1;
+   }
+}
+
+void Renderer::selectAll(){
+  for (index = 0; index < shapeCount; ++index)
+    shapes[index].isSelected =true;
+}
+
+void Renderer::deselectAll(){
+  for (index = 0; index < shapeCount; ++index)
+    shapes[index].isSelected = false;
+}
+

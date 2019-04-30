@@ -3,9 +3,11 @@
 #include "ofMain.h"
 #include "ofxAssimpModelLoader.h"
 #include "ofxOpenCv.h"
+//#include "rendererPlus.h"
+#include "renderer_Dynamic_Light.h"
 
 enum class VectorPrimitiveType { none, pixel, point, line, rectangle, ellipse, triangle };
-enum class ModelToDraw { modelOne, modelTwo, modelThree };
+enum class ModelToDraw { modelOne, modelTwo, modelThree, modelFour, modelFive, modelSix };
 enum class Filtrage { none, grayscale, seuil, lissage, seuilLissage};
 enum class ShaderType { color_fill, lambert, gouraud, phong, blinn_phong };
 
@@ -17,6 +19,13 @@ struct VectorPrimitive
 	float                  stroke_width;
 	ofColor							   stroke_color;
 	ofColor							   fill_color;
+
+	//float                  stroke_width;    // 1 * 4 = 4  octets
+//  unsigned char          stroke_color[4]; // 4 * 1 = 4  octets
+ // unsigned char          fill_color[4];   // 4 * 1 = 4  octets
+  bool isSelected = false;
+  float width = abs(position1[0]-position2[0]);
+  float height = abs(position1[1]-position2[1]);
 };
 
 class Renderer
@@ -28,6 +37,7 @@ public:
 
 	ofColor background_color;
 
+	int count;
 	int shapeCount;
 	int size;
 	int stride;
@@ -51,18 +61,40 @@ public:
 
 	ofImage import;
 
-	ofxAssimpModelLoader* models[3];
+	
+	ofMaterial material_cube;
+	ofMaterial material_sphere;
+	ofMaterial material_teapot;
+
+
+  	float scale_cube;
+  	float scale_sphere;
+  	float scale_teapot;
+  
+  	ofxAssimpModelLoader teapot;
+
+  	ofVec3f position_cube;
+  	ofVec3f position_sphere;
+  	ofVec3f position_teapot;
+
+
+	ofxAssimpModelLoader* models[6];
 	ofxAssimpModelLoader model_one;
 	ofxAssimpModelLoader model_two;
 	ofxAssimpModelLoader model_three;
+/*/*/
+	ofxAssimpModelLoader model_four;
+	ofxAssimpModelLoader model_five;
+	ofxAssimpModelLoader model_six;
+/*/*/
 
 	bool addedModels[3] = { false };
 	int selectedModel = 0;
 	ofxAssimpModelLoader* modelsMirror[3];
 	float mirror_z;
-	ofxAssimpModelLoader model_one_mirror;
-	ofxAssimpModelLoader model_two_mirror;
-	ofxAssimpModelLoader model_three_mirror;
+	//ofxAssimpModelLoader model_one_mirror;
+	//ofxAssimpModelLoader model_two_mirror;
+	//ofxAssimpModelLoader model_three_mirror;
 
 	ModelToDraw model_draw_mode;
 
@@ -98,7 +130,7 @@ public:
 
 	ofxCvColorImage image; //image Original
 	ofxCvGrayscaleImage grayImage; // image originale en niveaux de gris
-	ofxCvGrayscaleImage filtered; // Image utilisée pour le filtrage
+	ofxCvGrayscaleImage filtered; // Image utilisï¿½e pour le filtrage
 	Filtrage filtrage;
 
 	stack<VectorPrimitive> primitiveStack;
@@ -216,8 +248,18 @@ public:
 	void toneMap();
 
 	void add_3d_model(ModelToDraw model);
+	float geox, geoy, geoz;
 	void model_reset();
 	void get_bounding_box(int model);
 
 	~Renderer();
+
+	 void select_shapes(int x, int y);
+  void move_shapes(int x, int y);
+  void delete_selected_shapes();
+  void selectAll();
+  void deselectAll();
+
+
+
 };

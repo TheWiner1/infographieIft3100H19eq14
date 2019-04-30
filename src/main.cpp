@@ -1,7 +1,25 @@
 #include "ofMain.h"
 #include "ofApp.h"
-
+#include "application_Dynamic_Light.h"
 //========================================================================
+//<<<<<<< erwin
+
+bool use_gl_fixed_function_pipeline = false;
+
+int main()
+{
+  ofGLWindowSettings windowSettings;
+  windowSettings.setSize(1024, 512);
+
+  if (use_gl_fixed_function_pipeline)
+    windowSettings.setGLVersion(2, 1);
+  else
+    windowSettings.setGLVersion(3, 3);
+
+  ofCreateWindow(windowSettings);
+  ofRunApp( new ofApp());/*
+  //ofRunApp(new ApplicationDynamicLight());
+
 int main( ){
 	//ofSetupOpenGL(1024, 768, OF_WINDOW);			// <-------- setup the GL context
 	// this kicks off the running of my app
@@ -15,4 +33,6 @@ int main( ){
 	windowSettings.setGLVersion(3, 3);
 	ofCreateWindow(windowSettings);
 	ofRunApp(new ofApp());
+*/
 }
+
