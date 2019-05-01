@@ -1,47 +1,47 @@
 #version 120
 
 const float M_PI = 3.14159265358979323846;
-const float NFTY = 1000000000.;
-const int PLAN = 1;
-const int SPHERE = 2;
-const int SPHERE2 = 3;
-const int SPHERE3 = 4;
+const float INFINITY = 1000000000.;
+const int PLANE = 1;
+const int SPHERE_0 = 2;
+const int SPHERE_1 = 3;
+const int SPHERE_2 = 4;
 const int CUBE = 5;
 
 uniform float u_aspect_ratio;
 varying vec2 v_position;
 
 uniform vec3 sphere_position_0;
-uniform float sphere_rayon_0;
-uniform vec3 sphere_couleur_0;
+uniform float sphere_radius_0;
+uniform vec3 sphere_color_0;
 
 uniform vec3 sphere_position_1;
-uniform float sphere_rayon_1;
-uniform vec3 sphere_couleur_1;
+uniform float sphere_radius_1;
+uniform vec3 sphere_color_1;
 
 uniform vec3 sphere_position_2;
-uniform float sphere_rayon_2;
-uniform vec3 sphere_couleur_2;
+uniform float sphere_radius_2;
+uniform vec3 sphere_color_2;
 
 uniform vec3 cube_position;
-uniform vec3 cube_couleur;
+uniform vec3 cube_color;
 uniform vec3 cube_max;
 uniform vec3 cube_min;
 
-uniform vec3 plan_position;
-uniform vec3 plan_normal;
+uniform vec3 plane_position;
+uniform vec3 plane_normal;
 
 uniform float light_intensity;
 uniform vec2 light_specular;
 uniform vec3 light_position;
-uniform vec3 light_couleur;
+uniform vec3 light_color;
 
 uniform float ambient;
 uniform vec3 O;
 /*
 vec2 intersect_Box(vec3 entryPoint , vec3 rayDir, vec3 boxmin, vec3 boxmax)//, float *tnear, float *tfar)
 {
-    // compute intersection of ray with all six bbox plans
+    // compute intersection of ray with all six bbox planes
     vec3 invR =  vec3(1.0) / rayDir;
     vec3 tbot = invR * (boxmin - entryPoint);
     vec3 ttop = invR * (boxmax - entryPoint);
@@ -65,10 +65,9 @@ struct range
 	float tNear;
 	float tFar;
 };
-/*
 range intersectBox(vec3 entryPoint , vec3 rayDir, vec3 boxmin, vec3 boxmax)//, float *tnear, float *tfar)
 {
-    // compute intersection of ray with all six bbox plans
+    // compute intersection of ray with all six bbox planes
     vec3 invR;
     if(rayDir.x != 0 && rayDir.y != 0 &&  rayDir.z != 0){
         invR.x = 1.0 / rayDir.x;
@@ -90,7 +89,7 @@ range intersectBox(vec3 entryPoint , vec3 rayDir, vec3 boxmin, vec3 boxmax)//, f
 	tMinMax.tNear = largest_tmin;
 	tMinMax.tFar = smallest_tmax;
 	return tMinMax;
-}*/
+}
 
 
 
@@ -119,17 +118,17 @@ float intersect_sphere(vec3 O, vec3 D, vec3 S, float R) {
             }
         }
     }
-    return NFTY;
+    return INFINITY;
 }
 
-float intersect_plan(vec3 O, vec3 D, vec3 P, vec3 N) {
+float intersect_plane(vec3 O, vec3 D, vec3 P, vec3 N) {
     float denom = dot(D, N);
     if (abs(denom) < 1e-6) {
-        return NFTY;
+        return INFINITY;
     }
     float d = dot(P - O, N) / denom;
     if (d < 0.) {
-        return NFTY;
+        return INFINITY;
     }
     return d;
 }
@@ -139,7 +138,7 @@ vec3 run(float x, float y) {
     vec3 D = normalize(Q - O);
     int depth = 0;
     range t31;
-    float t_plan, t0, t1, t2, t3n, t3f;
+    float t_plane, t0, t1, t2, t3n, t3f;
     t3n = t31.tNear; 
     t3f = t31.tFar;
     vec3 rayO = O;
@@ -149,7 +148,7 @@ vec3 run(float x, float y) {
     float reflection = 1.;
 
     int object_index;
-    vec3 object_couleur;
+    vec3 object_color;
     vec3 object_normal;
     float object_reflection;
     vec3 M;
@@ -157,45 +156,53 @@ vec3 run(float x, float y) {
 
     while (depth < 5) {
 
-        t_plan = intersect_plan(rayO, rayD, plan_position, plan_normal);
-        t0 = intersect_sphere(rayO, rayD, sphere_position_0, sphere_rayon_0);
-        t1 = intersect_sphere(rayO, rayD, sphere_position_1, sphere_rayon_1);
-        t2 = intersect_sphere(rayO, rayD, sphere_position_2, sphere_rayon_2);
+        t_plane = intersect_plane(rayO, rayD, plane_position, plane_normal);
+        t0 = intersect_sphere(rayO, rayD, sphere_position_0, sphere_radius_0);
+        t1 = intersect_sphere(rayO, rayD, sphere_position_1, sphere_radius_1);
+        t2 = intersect_sphere(rayO, rayD, sphere_position_2, sphere_radius_2);
         //t31 = intersect_box(ray0, rayD, cube_min, cube_max);
-        if (t_plan < min(t0, t1)) {
-            M = rayO + rayD * t_plan;
-            object_normal = plan_normal;
-            object_couleur = vec3(0., 0.546, 1.);
+        if (t_plane < min(t0, t1)) {
+            M = rayO + rayD * t_plane;
+            object_normal = plane_normal;
+
+	    //if (mod(int(2*M.x), 2) == mod(int(2*M.z), 2)) { /* rect plane */
+            object_color = vec3(0., 0.546, 1.);
+            //} else {
+            //	object_color = vec3(1., 0., 0.);
+            //}
+
             object_reflection = .35;
-            object_index = plan;
+            object_index = PLANE;
         }
         else if (t0 < t1 && t0 < t2 ) {
             // Sphere 0.
             M = rayO + rayD * t0;
             object_normal = normalize(M - sphere_position_0);
-            object_couleur = sphere_couleur_0;
+            object_color = sphere_color_0;
             object_reflection = .5;
-            object_index = SPHERE;
+            object_index = SPHERE_0;
         }
         else if (t1 < t0 && t1 < t2 ) {
+            // Sphere 1.
             M = rayO + rayD * t1;
             object_normal = normalize(M - sphere_position_1);
-            object_couleur = sphere_couleur_1;
+            object_color = sphere_color_1;
             object_reflection = .5;
-            object_index = SPHERE2;
+            object_index = SPHERE_1;
         }
         else if (t2 < t0 && t2 < t1 ) {
+            // Sphere 2.
             M = rayO + rayD * t2;
             object_normal = normalize(M - sphere_position_2);
-            object_couleur = sphere_couleur_2;
+            object_color = sphere_color_2;
             object_reflection = .5;
-            object_index = SPHERE3;
-        }
-        /*else if(t31n<t31f)
+            object_index = SPHERE_2;
+        }/*
+        else if(t31n<t31f)
             {
                 M = rayO + rayD * t31n;
                 object_normal = normalize(M - cube_position);
-                object_couleur = cube_couleur;
+                object_color = cube_color;
                 object_reflection = .5;
                 object_index = CUBE;
             }*/
@@ -208,18 +215,24 @@ vec3 run(float x, float y) {
         N = object_normal;
         toL = normalize(light_position - M);
         toO = normalize(O - M);
-        if (object_index == PLAN) {
-            t0 = intersect_sphere(M + N * .0001, toL, sphere_position_0, sphere_rayon_0);
-            t1 = intersect_sphere(M + N * .0001, toL, sphere_position_1, sphere_rayon_1);
-            t2 = intersect_sphere(M + N * .0001, toL, sphere_position_2, sphere_rayon_2);
-            //t31 = intersect_cube(M + N * .0001, toL, cube_min, cube_max);           
-            if (min(t0, t1) < NFTY) {
+
+        /* shadow non bellaM = rayO + rayD * t1; */
+        if (object_index == PLANE) {
+
+            t0 = intersect_sphere(M + N * .0001, toL, sphere_position_0, sphere_radius_0);
+            t1 = intersect_sphere(M + N * .0001, toL, sphere_position_1, sphere_radius_1);
+            t2 = intersect_sphere(M + N * .0001, toL, sphere_position_2, sphere_radius_2);
+            //t31 = intersect_cube(M + N * .0001, toL, cube_min, cube_max);
+            
+            if (min(t0, t1) < INFINITY) {
                 break;
             }
+
         }
+
         col_ray = vec3(ambient, ambient, ambient);
-        col_ray += light_intensity * max(dot(N, toL), 0.) * object_couleur;
-        col_ray += light_specular.x * light_couleur * pow(max(dot(N, normalize(toL + toO)), 0.), light_specular.y);
+        col_ray += light_intensity * max(dot(N, toL), 0.) * object_color;
+        col_ray += light_specular.x * light_color * pow(max(dot(N, normalize(toL + toO)), 0.), light_specular.y);
 
         /* end trace_ray */
 
@@ -230,9 +243,11 @@ vec3 run(float x, float y) {
 
         depth++;
     }
+
     return clamp(col, 0., 1.);
 }
+
 void main() {
     vec2 pos = v_position;
-    gl_Fragcouleur = vec4(run(pos.x*u_aspect_ratio, pos.y), 1.);
+    gl_FragColor = vec4(run(pos.x*u_aspect_ratio, pos.y), 1.);
 }

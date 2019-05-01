@@ -10,7 +10,8 @@
 #include "application_Dynamic_Light.h"
 #include "applicationPlus.h"
 #include "draggableVertex.h"
-#include "mainRaytrace.h"
+//#include "mainRaytrace.h"
+#include "mainRT.cpp"
 #include "ofxDelaunay.h"
 #include "topoParametrique.h"
 #define N_CAMERAS 3 // AJOUT SASSY 6.3
@@ -32,7 +33,9 @@ public:
 	bool is_key_press_div;
 	bool is_key_press_mul;
 
-	ofAppRT raytracingGui;
+//	ofAppRT raytracingGui;
+	xApp raytracingGui;
+
 	/*Alex*/
 		Renderer renderer;
 		DraggableVertex draggableVertex;

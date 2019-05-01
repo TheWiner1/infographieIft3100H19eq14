@@ -4,13 +4,13 @@
 
 class ofAppRT : public ofBaseApp {
 	public:
-		ofxPanel guiRay;
-		ofParameter<ofVec3f> couleur1;
-		//ofParameter<ofVec3f> couleur2;
-		//ofParameter<ofVec3f> couleur3;
-		ofParameter<float>     rayon1;
-		//ofParameter<float>     rayon2;
-		//ofParameter<float>     rayon3;
+		ofxPanel gui;
+		ofParameter<ofVec3f> color1;
+		//ofParameter<ofVec3f> color2;
+		//ofParameter<ofVec3f> color3;
+		ofParameter<float>     radius1;
+		//ofParameter<float>     radius2;
+		//ofParameter<float>     radius3;
 		ofParameter<float>     intLight;
 		ofParameter<ofVec2f>   speLight;
 		ofParameter<ofVec3f>   colLight;

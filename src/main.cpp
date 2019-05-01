@@ -1,6 +1,7 @@
 //#include "ofMain.h"
 #include "ofApp.h"
 #include "application_Dynamic_Light.h"
+#include "ofAppGlutWindow.h"
 //========================================================================
 //<<<<<<< erwin
 
@@ -8,6 +9,7 @@ bool use_gl_fixed_function_pipeline = false;
 
 int main()
 {
+	ofAppGlutWindow window;
   ofGLWindowSettings windowSettings;
   windowSettings.setSize(1024, 512);
 
