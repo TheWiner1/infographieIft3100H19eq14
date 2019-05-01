@@ -37,10 +37,10 @@ void PBR::setup()
     "shader/pbr_330_fs.glsl");
 
   // charger les textures du matériau
-  texture_diffuse.load("texture/rock_06_diff_1k.jpg");
-  texture_metallic.load("texture/rock_06_mettallic_1k.jpg");
-  texture_roughness.load("texture/rock_06_rough_1k.jpg");
-  texture_occlusion.load("texture/rock_06_AO_1k.jpg");
+  texture_diffuse.load("rock_06_diff_1k.jpg");
+  texture_metallic.load("rock_06_mettallic_1k.jpg");
+  texture_roughness.load("rock_06_rough_1k.jpg");
+  texture_occlusion.load("rock_06_AO_1k.jpg");
 
   // paramètres des textures du matériau
   texture_diffuse.getTexture().setTextureWrap(GL_REPEAT, GL_REPEAT);
