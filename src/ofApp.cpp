@@ -66,7 +66,6 @@ void ofApp::setup() {
 	groupe2.add(elipse);
 	groupe2.add(triangle);
 	gui.add(&groupe2);
-
 	checkbox1.setName("Remplissage");
 	reset_button.setup("Vider le canvas");
 	reset_button.addListener(this, &ofApp::reset_button_pressed);
@@ -96,12 +95,20 @@ void ofApp::setup() {
 	geometry_group.setup("Modeles 3D");
 	geometry_group.add(model_one.set("Voiture", false));
 	model_one_listener = model_one.newListener([this](bool&) {onChangeGeometryGroup(model_one.getName(), model_one.get()); });
+	geometry_group.add(model_one_material.setup("Matériau voiture",2,0,4));
+	model_one_listener = model_one.newListener([this](bool&) {onChangeGeometryGroup(model_one.getName(), model_one.get()); });
+
 	geometry_group.add(model_two.set("Loup", false));
 	model_two_listener = model_two.newListener([this](bool&) {onChangeGeometryGroup(model_two.getName(), model_two.get()); });
+	geometry_group.add(model_two_material.setup("Matériau loup", 0, 0, 4));
+
 	geometry_group.add(model_three.set("Cerf", false));
 	model_three_listener = model_three.newListener([this](bool&) {onChangeGeometryGroup(model_three.getName(), model_three.get()); });
+	geometry_group.add(model_three_material.setup("Matériau cerf", 4, 0, 4));
 
 	gui.add(&geometry_group);
+	gui.add(model_lookAt.set("Regarder vers", false));
+	gui.add(model_mirror.set("Mirroir modeles", false));
 	model_reset.setup("Effacer modeles");
 	model_reset.addListener(this, &ofApp::model_reset_pressed);
 	gui.add(&model_reset);
@@ -161,38 +168,185 @@ void ofApp::setup() {
 	camera_front.setPosition(ofGetWidth() / 2.0f, ofGetHeight() / 2.0f, 300.0f);
 	projection();
 
+	is_key_press_up = false;
+	is_key_press_down = false;
+	is_key_press_left = false;
+	is_key_press_right = false;
 
-	// AJOUT SASSY 6.3-------------------------------------------------
-    // Setup cameras
-	iMainCamera = 0; // indice camera
+	selected_ctrl_point = 0;
 
-	camTop.tiltDeg(-90);
-	camLeft.panDeg(-90);
-	
-	cameras[0] = &camera_front;
-	cameras[1] = &camTop;
-	cameras[2] = &camLeft;
+	topologieParametrique.setup();
 
-	for (size_t i = 1; i != N_CAMERAS; ++i) {
-		cameras[i]->setPosition(ofGetWidth() / 2.0f, ofGetHeight() / 2.0f, 300.0f);
-		cameras[i]->enableOrtho();
-		cameras[i]->setNearClip(0.1);
-        cameras[i]->setFarClip(10000);
-		//cameras[i]->setNearClip(camera_near);
-		//cameras[i]->setFarClip(camera_far);
-	}
+ toggle_ui = true;
 
-	// Define viewports
-	setupViewports();
+  PBR.setup();
 
-	//-----------------------------------------------------
+  reset();
 
+  guiPBR.setup("pbr material");
+
+  // interface pour les couleurs du matériau
+  group_material_color.setup("color");
+
+  group_material_color.add(color_picker_ambient);
+  group_material_color.add(color_picker_diffuse);
+  group_material_color.add(color_picker_specular);
+
+  guiPBR.add(&group_material_color);
+
+  // interface pour les facteurs numériques du matériau
+  group_material_factor.setup("factor");
+
+  group_material_factor.add(slider_metallic);
+  group_material_factor.add(slider_roughness);
+  group_material_factor.add(slider_occlusion);
+  group_material_factor.add(slider_brightness);
+
+  group_material_factor.add(slider_fresnel_ior);
+
+  guiPBR.add(&group_material_factor);
+
+  // interface pour les paramètres de la lumière
+  group_light.setup("light");
+
+  group_light.add(color_picker_light_color);
+  group_light.add(slider_light_intensity);
+  group_light.add(toggle_light_motion);
+
+  guiPBR.add(&group_light);
+
+  // interface pour les paramètres de mappage tonal
+  group_tone_mapping.setup("tone mapping");
+
+  group_tone_mapping.add(slider_exposure);
+  group_tone_mapping.add(slider_gamma);
+  group_tone_mapping.add(toggle_tone_mapping);
+
+  guiPBR.add(&group_tone_mapping);
+
+  // interface pour les options de l'application
+  toggle_ui.setName("hide ui");
+  guiPBR.add(toggle_ui);
+
+  button_reset.setup("reset");
+  button_reset.addListener(this, &ofApp::button_reset_pressed);
+  guiPBR.add(&button_reset);
+
+  geometry_groupPBR.setup("Modeles 3D");
+
+  geometry_groupPBR.add(model_four.set("Voiture", false));
+
+  model_four_listener = model_four.newListener([this](bool&) {onChangeGeometryGroupPBR(model_four.getName(), model_four.get()); });
+
+  geometry_groupPBR.add(model_five.set("Loup", false));
+
+  model_five_listener = model_five.newListener([this](bool&) {onChangeGeometryGroupPBR(model_five.getName(), model_five.get()); });
+
+  geometry_groupPBR.add(model_six.set("Cerf", false));
+
+  model_six_listener = model_six.newListener([this](bool&) {onChangeGeometryGroupPBR(model_six.getName(), model_six.get()); });
+
+
+
+  guiPBR.add(&geometry_groupPBR);
+
+  model_resetPBR.setup("Effacer modeles");
+
+  model_resetPBR.addListener(this, &ofApp::model_reset_pressedPBR);
+
+  guiPBR.add(&model_resetPBR);
+
+  // AJOUT SASSY 6.3-------------------------------------------------
+  // Setup cameras
+  iMainCamera = 0; // indice camera
+
+
+  cameras[0] = &camera_front;
+  renderer.camera = &camera_front;
+
+  camTop.tiltDeg(-90);
+  camLeft.panDeg(-90);
+
+  cameras[1] = &camTop;
+  cameras[2] = &camLeft;
+
+  for (size_t i = 1; i != N_CAMERAS; ++i) {
+	  cameras[i]->setPosition(ofGetWidth() / 2.0f, ofGetHeight() / 2.0f, 20.0f);
+	  cameras[i]->enableOrtho();
+	  cameras[i]->setNearClip(0.1);
+	  cameras[i]->setFarClip(10000);
+	  //cameras[i]->setNearClip(camera_near);
+	  //cameras[i]->setFarClip(camera_far);
+  }
+
+  // Define viewports
+  setupViewports();
+
+  //-----------------------------------------------------
+}
+
+void ofApp::reset()
+{
+  PBR.reset();
+
+  color_picker_ambient.set("ambient", PBR.material_color_ambient, ofColor(0, 0), ofColor(255, 255));
+  color_picker_diffuse.set("diffuse", PBR.material_color_diffuse, ofColor(0, 0), ofColor(255, 255));
+  color_picker_specular.set("specular", PBR.material_color_specular, ofColor(0, 0), ofColor(255, 255));
+
+  slider_metallic.set("metallic", PBR.material_metallic, 0.0f, 1.0f);
+  slider_roughness.set("roughness", PBR.material_roughness, 0.0f, 1.0f);
+  slider_occlusion.set("occlusion", PBR.material_occlusion, 0.0f, 5.0f);
+  slider_brightness.set("brightness", PBR.material_brightness, 0.0f, 5.0f);
+
+  slider_fresnel_ior.set("fresnel ior", PBR.material_fresnel_ior, glm::vec3(0.0f), glm::vec3(1.0f));
+
+  color_picker_light_color.set("color", PBR.light_color, ofColor(0, 0), ofColor(255, 255));
+  slider_light_intensity.set("intensity", PBR.light_intensity, 0.0f, 100.0f);
+  toggle_light_motion.set("motion", PBR.light_motion);
+
+  slider_exposure.set("exposure", 1.0f, 0.0f, 5.0f);
+  slider_gamma.set("gamma", 2.2f, 0.0f, 5.0f);
+
+  if (PBR.tone_mapping_toggle)
+    toggle_tone_mapping.set("aces filmic", true);
+  else
+    toggle_tone_mapping.set("reinhard", false);
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
 	sync.update();
 	nFrames++;
+
+		time_current = ofGetElapsedTimef();
+		time_elapsed = time_current - time_last;
+		time_last = time_current;
+
+		PBR.material_color_ambient = color_picker_ambient;
+		PBR.material_color_diffuse = color_picker_diffuse;
+		PBR.material_color_specular = color_picker_specular;
+
+		PBR.material_metallic = slider_metallic;
+		PBR.material_roughness = slider_roughness;
+		PBR.material_occlusion = slider_occlusion;
+		PBR.material_brightness = slider_brightness;
+
+		PBR.material_fresnel_ior = slider_fresnel_ior;
+
+		PBR.light_color = color_picker_light_color;
+		PBR.light_intensity = slider_light_intensity;
+		PBR.light_motion = toggle_light_motion;
+
+		PBR.tone_mapping_exposure = slider_exposure;
+		PBR.tone_mapping_gamma = slider_gamma;
+		PBR.tone_mapping_toggle = toggle_tone_mapping;
+
+		if (PBR.tone_mapping_toggle)
+			toggle_tone_mapping.set("aces filmic", true);
+		else
+			toggle_tone_mapping.set("reinhard", false);
+
+		PBR.update();
 
 	//RGB
 	if (!check) {
@@ -215,9 +369,12 @@ void ofApp::update() {
 
 	renderer.model_box = model_box;
 	renderer.update();
-	//renderer.updateCamera();
+	renderer.updateCamera();
+	update_materials(); // Alex
 	time_current = ofGetElapsedTimef();
 	time_elapsed = time_current - time_last;
+	time_last = time_current;
+
 	if (is_camera_perspective)
 	{
 		if (is_camera_fov_narrow)
@@ -240,7 +397,39 @@ void ofApp::update() {
 			}
 		}
 	}
-	renderer.updateIllumination();
+	renderer.updateIllumination();	
+		/*Alex TODO if avec camera*/
+	renderer.is_camera_move_forward = is_key_press_plus;
+	renderer.is_camera_move_backward = is_key_press_minus;
+	if (!topologieParametrique.afficher_courbe_parametrique) //Alex
+	{
+		renderer.is_camera_move_left = is_key_press_left;
+		renderer.is_camera_move_right = is_key_press_right;
+
+		renderer.is_camera_move_up = is_key_press_up;
+		renderer.is_camera_move_down = is_key_press_down;
+	}
+	renderer.is_camera_roll_left = is_key_press_eight;
+	renderer.is_camera_roll_right = is_key_press_nine;
+
+
+	renderer.is_camera_pan_left = is_key_press_div;
+	renderer.is_camera_pan_right = is_key_press_mul;
+
+	renderer.is_camera_look_at = model_lookAt;
+	renderer.model_mirror = model_mirror;
+
+	if (topologieParametrique.afficher_courbe_parametrique) {
+		if (is_key_press_up)
+			topologieParametrique.selected_ctrl_point->y -= topologieParametrique.speed * time_elapsed;
+		if (is_key_press_down)
+			topologieParametrique.selected_ctrl_point->y += topologieParametrique.speed * time_elapsed;
+		if (is_key_press_left)
+			topologieParametrique.selected_ctrl_point->x -= topologieParametrique.speed * time_elapsed;
+		if (is_key_press_right)
+			topologieParametrique.selected_ctrl_point->x += topologieParametrique.speed * time_elapsed;
+	}
+	topologieParametrique.update();
 }
 
 //--------------------------------------------------------------
@@ -311,8 +500,18 @@ void ofApp::draw() {
 	ofPopStyle();
 	//---------------------------------------------------------
 
-	gui.draw();
-	gui.setPosition(ofGetWidth() - 250, 0); // AJOUT SASSY
+
+	topologieParametrique.draw();
+
+
+	if (!toggle_ui) {
+		gui.draw();
+	    gui.setPosition(ofGetWidth() - 250, 0); 
+    }   
+	else {
+        guiPBR.draw();
+        guiPBR.setPosition(ofGetWidth() - 250, 0); 
+	}
 }
 
 //--------------------------------------------------------------
@@ -344,6 +543,56 @@ void ofApp::keyPressed(int key) {
 	}
 
 	//-------------------------------------------------------
+
+	switch (key)
+	{
+	case OF_KEY_LEFT: // touche ←
+		is_key_press_left = true;
+		break;
+
+	case OF_KEY_UP: // touche ↑
+		is_key_press_up = true;
+		break;
+
+	case OF_KEY_RIGHT: // touche →
+		is_key_press_right = true;
+		break;
+
+	case OF_KEY_DOWN: // touche ↓
+		is_key_press_down = true;
+		break;
+
+	case '+': // touche +
+		is_key_press_plus = true;
+		break;
+
+	case '-': // touche -
+		is_key_press_minus = true;
+		break;
+
+	case '/': // touche /
+		is_key_press_div = true;
+		break;
+
+	case '*': // touche -
+		is_key_press_mul = true;
+		break;
+
+	case '7': // touche 7
+		is_key_press_seven = true;
+		break;
+
+	case '8': // touche 8
+		is_key_press_eight = true;
+		break;
+
+	case '9': // touche 9
+		is_key_press_nine = true;
+		break;
+
+	default:
+		break;
+	}
 }
 
 //--------------------------------------------------------------
@@ -387,6 +636,85 @@ void ofApp::keyReleased(int key) {
 			ofLog() << "<shader: blinn-phong>";
 			break;
 
+		case OF_KEY_RIGHT_SHIFT:
+			selected_ctrl_point += 1;
+			if (selected_ctrl_point == 6)
+				selected_ctrl_point = 0;
+			topologieParametrique.selected_ctrl_point = &topologieParametrique.ctrl_points[selected_ctrl_point];
+			break;
+
+		case 98: // touche b : reinitialise la position des points de la courbe parametrique. 
+			topologieParametrique.reset();
+			break;
+
+		case 109: // touche m 
+			topologieParametrique.afficher_surface_parametrique = !topologieParametrique.afficher_surface_parametrique;
+			break;
+
+		case 110: // touche n 
+			topologieParametrique.afficher_courbe_parametrique = !topologieParametrique.afficher_courbe_parametrique;
+			break;
+/*Alex*/
+		case 56: // touche 8
+			is_key_press_eight = false;
+			break;
+
+		case 57: // touche 9
+			is_key_press_nine = false;
+			break;
+
+		case '/': // touche /
+			is_key_press_div = false;
+			break;
+
+		case '*': // touche -
+			is_key_press_mul = false;
+			break;
+
+		case OF_KEY_LEFT: // touche ←
+			is_key_press_left = false;
+			break;
+
+		case OF_KEY_UP: // touche ↑
+			is_key_press_up = false;
+			break;
+
+		case OF_KEY_RIGHT: // touche →
+			is_key_press_right = false;
+			break;
+
+		case OF_KEY_DOWN: // touche ↓
+			is_key_press_down = false;
+			break;
+
+		case '+': // touche +
+			is_key_press_plus = false;
+			break;
+
+		case '-': // touche -
+			is_key_press_minus = false;
+			break;
+/*Alex*/
+
+                    case 113: // touche e
+      toggle_light_motion = !toggle_light_motion;
+      ofLog() << "<toggle light motion: " << toggle_light_motion << ">";
+      break;
+
+    case 114: // touche r
+      reset();
+      ofLog() << "<reset PBR>";
+      break;
+
+    case 115: // touche s
+      is_key_press_down = false;
+      break;
+
+    case 117: // touche u
+      toggle_ui = !toggle_ui;
+      ofLog() << "<toggle ui: " << toggle_ui << ">";
+      break;
+
 		default:
 			break;
 	}
@@ -396,6 +724,7 @@ void ofApp::keyReleased(int key) {
 void ofApp::mouseMoved(int x, int y) {
 	renderer.mouse_current_x = x;
 	renderer.mouse_current_y = y;
+
 
 	textboxX.set("X", to_string(x));
 	textboxY.set("Y", to_string(y));
@@ -423,8 +752,12 @@ void ofApp::mousePressed(int x, int y, int button) {
 	renderer.mouse_current_x = x;
 	renderer.mouse_current_y = y;
 
+	PBR.mouse_current_x = x;
+	PBR.mouse_current_y = y;
+
 	renderer.mouse_press_x = x;
 	renderer.mouse_press_y = y;
+
 
 	draggableVertex.mousePressed(x, y, button);
 }
@@ -436,9 +769,12 @@ void ofApp::mouseReleased(int x, int y, int button) {
 	renderer.mouse_current_x = x;
 	renderer.mouse_current_y = y;
 
+
+	if (model_four.get() || model_five.get() || model_six.get()) { PBR.add_3d_model(PBR.model_draw_mode); }
 	if (renderer.draw_mode != VectorPrimitiveType::none)
 		renderer.add_vector_shape(renderer.draw_mode);
 	if (model_one.get() || model_two.get() || model_three.get()) { renderer.add_3d_model(renderer.model_draw_mode); }
+	
 
 	draggableVertex.mouseReleased(x, y, button);
 
@@ -451,12 +787,14 @@ void ofApp::mouseReleased(int x, int y, int button) {
 void ofApp::mouseEntered(int x, int y) {
 	renderer.mouse_current_x = x;
 	renderer.mouse_current_y = y;
+
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseExited(int x, int y) {
 	renderer.mouse_current_x = x;
 	renderer.mouse_current_y = y;
+
 }
 
 //--------------------------------------------------------------
@@ -533,6 +871,10 @@ void ofApp::reset_button_pressed() {
 	renderer.reset();
 }
 
+void ofApp::reset_button_pressedPBR() {
+	PBR.reset();
+}
+
 void ofApp::onChangePrimitiveVectorielle(string name, bool value) {
 	if (name == "Pixel") {
 		if (value) {
@@ -581,11 +923,13 @@ void ofApp::tonemapping_pressed()
 }
 
 void ofApp::onChangeGeometryGroup(string name, bool value) {
+	renderer.selectedModel = 0;
 	if (name == "Voiture") {
 		if (value) {
 			model_two.set(false);
 			model_three.set(false);
 			renderer.model_draw_mode = ModelToDraw::modelOne;
+			renderer.selectedModel = 1;
 		}
 	}
 	else if (name == "Loup") {
@@ -593,6 +937,7 @@ void ofApp::onChangeGeometryGroup(string name, bool value) {
 			model_one.set(false);
 			model_three.set(false);
 			renderer.model_draw_mode = ModelToDraw::modelTwo;
+			renderer.selectedModel = 2;
 		}
 	}
 	else if (name == "Cerf") {
@@ -600,6 +945,40 @@ void ofApp::onChangeGeometryGroup(string name, bool value) {
 			model_one.set(false);
 			model_two.set(false);
 			renderer.model_draw_mode = ModelToDraw::modelThree;
+			renderer.selectedModel = 3;
+
+		}
+	}
+}
+
+void ofApp::onChangeGeometryGroupPBR(string name, bool value) {
+
+	if (name == "Voiture") {
+		if (value) {
+			model_four.set(true);
+			model_five.set(false);
+			model_six.set(false);
+			PBR.model_draw_mode = ModelToDrawPBR::modelOne;
+			
+		}
+	}
+	else if (name == "Loup") {
+		if (value) {
+			model_five.set(true);
+			model_four.set(false);
+			model_six.set(false);
+			PBR.model_draw_mode = ModelToDrawPBR::modelTwo;
+			
+		}
+	}
+	else if (name == "Cerf") {
+		if (value) {
+			model_six.set(true);
+			model_four.set(false);
+			model_five.set(false);
+			PBR.model_draw_mode = ModelToDrawPBR::modelThree;
+	
+
 		}
 	}
 }
@@ -642,6 +1021,12 @@ void ofApp::model_reset_pressed()
 	renderer.model_reset();
 }
 
+void ofApp::model_reset_pressedPBR()
+{
+	PBR.model_reset();
+	PBR.reset();
+}
+
 void ofApp::undo_pressed()
 {
 	renderer.undo();
@@ -649,6 +1034,7 @@ void ofApp::undo_pressed()
 
 void ofApp::projection() {
 	camera = &camera_front;
+	renderer.camera = &camera_front;
 
 	camera_position = camera->getPosition();
 	camera_orientation = camera->getOrientationQuat();
@@ -705,6 +1091,7 @@ void ofApp::redo_pressed()
 void ofApp::drawScene(int cameraIndex) {
 
 	renderer.draw();
+         PBR.draw();
 	if (draggable_show)
 		draggableVertex.draw();
 	if (delaunay_show) {
@@ -720,4 +1107,74 @@ void ofApp::drawScene(int cameraIndex) {
 		recFrames = 0;
 	}
 
+}
+
+void ofApp::update_materials()
+{
+	switch (model_one_material)
+	{
+	case 1:
+		renderer.model_material[0] = renderer.material_1;
+		break;
+	case 2:
+		renderer.model_material[0] = renderer.material_2;
+		break;
+	case 3:
+		renderer.model_material[0] = renderer.material_3;
+		break;
+	case 4:
+		renderer.model_material[0] = renderer.material_4;
+		break;
+	default:
+		renderer.model_material[0] = renderer.material_0;
+		break;
+	}
+
+	switch (model_two_material)
+	{
+	case 1:
+		renderer.model_material[1] = renderer.material_1;
+		break;
+	case 2:
+		renderer.model_material[1] = renderer.material_2;
+		break;
+	case 3:
+		renderer.model_material[1] = renderer.material_3;
+		break;
+	case 4:
+		renderer.model_material[1] = renderer.material_4;
+		break;
+	default:
+		renderer.model_material[1] = renderer.material_0;
+		break;
+	}
+	switch (model_three_material)
+	{
+	case 1:
+		renderer.model_material[2] = renderer.material_1;
+		break;
+	case 2:
+		renderer.model_material[2] = renderer.material_2;
+		break;
+	case 3:
+		renderer.model_material[2] = renderer.material_3;
+		break;
+	case 4:
+		renderer.model_material[2] = renderer.material_4;
+		break;
+	default:
+		renderer.model_material[2] = renderer.material_0;
+		break;
+	}
+}
+void ofApp::button_reset_pressed()
+{
+  reset();
+}
+
+void ofApp::exit()
+{
+  button_reset.removeListener(this, &ofApp::button_reset_pressed);
+
+  ofLog() << "<app::exit>";
 }

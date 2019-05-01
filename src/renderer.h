@@ -56,6 +56,14 @@ public:
 	ofxAssimpModelLoader model_two;
 	ofxAssimpModelLoader model_three;
 
+	bool addedModels[3] = { false };
+	int selectedModel = 0;
+	ofxAssimpModelLoader* modelsMirror[3];
+	float mirror_z;
+	ofxAssimpModelLoader model_one_mirror;
+	ofxAssimpModelLoader model_two_mirror;
+	ofxAssimpModelLoader model_three_mirror;
+
 	ModelToDraw model_draw_mode;
 
 	ofLight light;
@@ -68,6 +76,8 @@ public:
 
 	bool model_box;
 	ofVec3f size_box;
+
+	bool model_mirror;
 
 	int w_texture, h_texture;
 	ofTexture	texGray;
@@ -112,7 +122,42 @@ public:
 	void updateIllumination();
 	//*fin variables illumination
 
-	/*/variables camera;
+	//variables camera;
+
+	/*Alex begin*/
+
+	ofPlanePrimitive v_plane;
+	ofMaterial material_v_plane;
+
+	float speed_delta;
+	float speed_translation;
+	float speed_rotation;
+
+	bool is_camera_move_left;
+	bool is_camera_move_right;
+	bool is_camera_move_up;
+	bool is_camera_move_down;
+	bool is_camera_move_forward;
+	bool is_camera_move_backward;
+	bool is_camera_roll_left;
+	bool is_camera_roll_right;
+	bool is_camera_pan_left;
+	bool is_camera_pan_right;
+	bool is_camera_look_at;
+
+
+	ofMaterial model_material[3];
+	ofMaterial material_0;
+	ofMaterial material_1;
+	ofMaterial material_2;
+	ofMaterial material_3;
+	ofMaterial material_4;
+	ofMaterial material_current;
+
+	ofVec3f  camera_dir;
+	float camera_to_mirror_angle;
+	/*Alex end*/
+	/*Camera*/
 	ofCamera* camera;
 
 	ofCamera camera_front;
@@ -139,7 +184,7 @@ public:
 	float time_current;
 	float time_last;
 	float time_elapsed;
-	*fin variables  camera*/
+	//fin variables  camera
 
 	void setup();
 	//void setupCamera();
@@ -172,6 +217,7 @@ public:
 
 	void add_3d_model(ModelToDraw model);
 	void model_reset();
+	void model_resetPBR();
 	void get_bounding_box(int model);
 
 	~Renderer();
